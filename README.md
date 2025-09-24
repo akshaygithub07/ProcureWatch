@@ -100,8 +100,8 @@ The frontend (React/Angular) interacts with the blockchain via **Hyperledger Fab
 ## Setup Instructions
 1. **Clone the repository**
 ```bash
-git clone <repo-url>
-cd transparent-procurement
+git clone https://github.com/akshaygithub07/ProcureWatch.git
+cd ProcureWatch
 ```
 
 2. **Start the Fabric network**
