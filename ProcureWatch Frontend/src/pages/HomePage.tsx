@@ -87,11 +87,11 @@ function HomePage() {
               Login / Register
             </button>
           </div>
-          <img
+          {/* <img
             src="https://illustrations.popsy.co/gray/public-service.svg"
             alt="Government procurement illustration"
             className="mx-auto w-full max-w-md rounded-lg"
-          />
+          /> */}
         </div>
       </header>
 
