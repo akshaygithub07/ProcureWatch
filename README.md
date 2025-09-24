@@ -152,8 +152,8 @@ npm start
 ---
 
 ## Contributors
-- <img src="https://github.com/Goldenbook27.png" width="30" height="30"> [GitHubUser1](https://github.com/Goldenbook27) – Piyush 
-- <img src="https://github.com/akshaygithub07.png" width="30" height="30"> [GitHubUser2](https://github.com/akshaygithub07) – Akshay
-- <img src="https://github.com/AryanSC123.png" width="30" height="30"> [GitHubUser3](https://github.com/AryanSC123) – Aryan
-- <img src="https://github.com/Madannadar.png" width="30" height="30"> [GitHubUser3](https://github.com/Madannadar) – Madan
+- <img src="https://github.com/Goldenbook27.png" width="30" height="30"> [Goldenbook27](https://github.com/Goldenbook27) – Piyush 
+- <img src="https://github.com/akshaygithub07.png" width="30" height="30"> [akshaygithub07](https://github.com/akshaygithub07) – Akshay
+- <img src="https://github.com/AryanSC123.png" width="30" height="30"> [AryanSC123](https://github.com/AryanSC123) – Aryan
+- <img src="https://github.com/Madannadar.png" width="30" height="30"> [Madannadar](https://github.com/Madannadar) – Madan
 
