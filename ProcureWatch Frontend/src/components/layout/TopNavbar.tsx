@@ -5,7 +5,6 @@ import {
   MenuIcon,
   UserIcon,
   XIcon,
-  ShieldCheckIcon,
   LogOutIcon,
   SettingsIcon,
 } from 'lucide-react'

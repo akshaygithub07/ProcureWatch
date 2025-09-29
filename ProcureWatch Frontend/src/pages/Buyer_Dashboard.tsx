@@ -1,4 +1,3 @@
-import React from 'react'
 import { useUser } from '../contexts/UserContext.tsx'
 import { StatCard } from './StatCard.tsx'
 import { NotificationsPanel } from './NotificationsPanel.tsx'

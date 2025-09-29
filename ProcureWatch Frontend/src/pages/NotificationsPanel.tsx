@@ -1,4 +1,3 @@
-import React from 'react'
 import { BellIcon, ChevronRightIcon } from 'lucide-react'
 export function NotificationsPanel() {
   const notifications = [

@@ -4,7 +4,6 @@ import {
   ChevronDown,
   Home,
   BarChart2,
-  FileText,
   DollarSign,
   HelpCircle,
   Shield,
@@ -16,13 +15,11 @@ import {
 
 export interface CitizenDashboardProps {
   userName?: string
-  userAvatar?: string
   'data-id'?: string
 }
 
 export function CitizenDashboard({
   userName = 'Alex Citizen',
-  userAvatar,
   'data-id': dataId,
 }: CitizenDashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -236,7 +233,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
   Pie,
   Cell,
@@ -444,7 +440,7 @@ export const TransparencyStats: React.FC = () => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {procurementCategories.map((entry, index) => (
+                {procurementCategories.map((_, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={COLORS[index % COLORS.length]}
@@ -632,7 +628,6 @@ export const TransparencyStats: React.FC = () => {
 }
 
 import {
-  FilterIcon,
   ArrowDownIcon,
   FileTextIcon,
   SlidersIcon,
@@ -1296,7 +1291,7 @@ const SpendingReports: React.FC = () => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {spendingByCategory.map((entry, index) => (
+                {spendingByCategory.map((_, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={COLORS[index % COLORS.length]}

@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Bell,
   ChevronDown,
-  Globe,
   Home,
   FileText,
   Users,
@@ -11,21 +10,18 @@ import {
   HelpCircle,
   Menu,
   X,
-  TrendingUp,
   Shield,
 } from "lucide-react";
 import { BudgetTracking, BuyerSupport, ProcurementRequests, VendorResponses } from "./BuyerPages";
-import { Contracts, Support } from "./VendorPages";
+import { Contracts } from "./VendorPages";
 
 export interface BuyerDashboardProps {
   userName?: string;
-  userAvatar?: string;
   "data-id"?: string;
 }
 
 export function BuyerDashboard({
   userName = "Jane Smith",
-  userAvatar,
   "data-id": dataId,
 }: BuyerDashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
