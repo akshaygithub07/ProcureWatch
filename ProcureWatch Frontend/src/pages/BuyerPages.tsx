@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Plus,
   Search,
@@ -1983,7 +1983,6 @@ import {
 import {
   DollarSignIcon,
   TrendingUpIcon,
-  TrendingDownIcon,
   AlertCircleIcon,
 } from 'lucide-react'
 export function BudgetTracking() {

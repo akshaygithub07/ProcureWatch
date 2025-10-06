@@ -1,8 +1,7 @@
-import React, { useState } from 'react'
+import  { useState } from 'react'
 import type { FormEvent } from 'react'
 import {
   Search,
-  Filter,
   Calendar,
   DollarSign,
   Clock,
@@ -11,7 +10,6 @@ import {
   Download,
   CheckCircle,
   XCircle,
-  AlertCircle,
   Phone,
   Mail,
   MessageCircle,
@@ -19,7 +17,7 @@ import {
   ChevronRight,
   MapPin,
   Building,
-  X, 
+  
 } from 'lucide-react'
 // Active Tenders Page
 

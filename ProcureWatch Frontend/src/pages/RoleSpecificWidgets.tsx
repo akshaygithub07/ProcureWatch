@@ -1,16 +1,12 @@
-import React from 'react'
 import { useUser } from '../contexts/UserContext.tsx'
 import {
   FileTextIcon,
   HandshakeIcon,
-  FileCheckIcon,
   ShieldIcon,
   AlertTriangleIcon,
-  BarChart2Icon,
   ClipboardIcon,
   UsersIcon,
   PieChartIcon,
-  LineChartIcon,
   TrendingUpIcon,
   CheckCircleIcon,
 } from 'lucide-react'

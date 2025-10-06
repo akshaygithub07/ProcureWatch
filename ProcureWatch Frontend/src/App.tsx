@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { VendorDashboard } from './pages/VendorDashboard'
 import Register from './pages/Register.tsx';
 import { BuyerDashboard } from './pages/BuyerDashboard';
-import Layout from './components/layout/Layout.tsx';
 import { CitizenDashboard } from './pages/CitizenDashboard.tsx';
 import HomePage from './pages/HomePage.tsx';
 import { AuditorDashboard } from './pages/AuditorDashboard.tsx';

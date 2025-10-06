@@ -1,8 +1,7 @@
-import React, { useState } from 'react'
+import  { useState } from 'react'
 import {
   Bell,
   ChevronDown,
-  Globe,
   Home,
   FileText,
   Gavel,
@@ -12,18 +11,14 @@ import {
   X,
   TrendingUp,
   DollarSign,
-  Users,
-  Activity,
 } from 'lucide-react'
 import { ActiveTenders, MyBids, Contracts, Support } from './VendorPages.tsx'
 export interface VendorDashboardProps {
   userName?: string
-  userAvatar?: string
   'data-id'?: string
 }
 export function VendorDashboard({
   userName = 'John Doe',
-  userAvatar,
   'data-id': dataId,
 }: VendorDashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)

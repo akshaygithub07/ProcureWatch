@@ -1,4 +1,3 @@
-import React from 'react'
 import {
   BarChart,
   Bar,
@@ -16,7 +15,7 @@ import {
 } from 'recharts'
 import { useUser } from '../contexts/UserContext.tsx'
 export function ChartWidgets() {
-  const { user } = useUser()
+  useUser()
   // Sample data for charts
   const budgetData = [
     {
@@ -136,7 +135,7 @@ export function ChartWidgets() {
                 `${name}`
               }
             >
-              {budgetData.map((entry, index) => (
+              {budgetData.map((_, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={COLORS[index % COLORS.length]}

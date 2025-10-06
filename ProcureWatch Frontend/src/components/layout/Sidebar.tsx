@@ -11,7 +11,6 @@ import {
   ClipboardCheckIcon,
   FileBarChartIcon,
   AlertTriangleIcon,
-  UserIcon,
 } from 'lucide-react'
 const Sidebar: React.FC = () => {
   const location = useLocation()

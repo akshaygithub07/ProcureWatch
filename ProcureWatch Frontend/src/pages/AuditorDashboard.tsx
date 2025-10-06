@@ -17,13 +17,11 @@ import {
 
 export interface AuditorDashboardProps {
   userName?: string
-  userAvatar?: string
   'data-id'?: string
 }
 
 export function AuditorDashboard({
   userName = 'Jane Auditor',
-  userAvatar,
   'data-id': dataId,
 }: AuditorDashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -681,7 +679,6 @@ const AuditTrail: React.FC = () => {
 
 import {
   AlertTriangleIcon,
-  XCircleIcon,
   UserIcon,
   ArrowUpCircleIcon,
   ArrowDownCircleIcon,
@@ -1606,7 +1603,7 @@ const ComplianceStats: React.FC = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, value, index }) => {
+                label={({ name, value }) => {
                   const total = complianceByCategory.reduce((sum, entry) => sum + entry.value, 0)
                   const percent = total > 0 ? (value as number) / total : 0
                   return `${name}: ${(percent * 100).toFixed(0)}%`
@@ -1615,7 +1612,7 @@ const ComplianceStats: React.FC = () => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {complianceByCategory.map((entry, index) => (
+                {complianceByCategory.map((_, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={COLORS[index % COLORS.length]}
