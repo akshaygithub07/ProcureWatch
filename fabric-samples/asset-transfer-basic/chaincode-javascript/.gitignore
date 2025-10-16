@@ -8,8 +8,6 @@ coverage
 # Report cache used by istanbul
 .nyc_output
 
-
-
 # Dependency directories
 node_modules/
 jspm_packages/

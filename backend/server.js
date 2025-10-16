@@ -12,7 +12,7 @@ app.use(bodyParser.json());
 // Config (edit these based on your setup)
 const ccpPath = path.resolve(__dirname, 'connection.json'); // Your network connection profile
 const contractName = 'bidding'; // Chaincode name as deployed
-const channelName = 'mychannel'; // Fabric channel
+const channelName = 'procurementchannel'; // Fabric channel
 
 // Helper: Get Contract
 async function getContract(orgMSP, userId) {
@@ -20,19 +20,22 @@ async function getContract(orgMSP, userId) {
     const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 
     // Wallet setup: here we expect user credentials to be present in the 'wallet' folder
-    const walletPath = path.join(process.cwd(), 'wallet');
+    const walletPath = '/home/akshay/ProcureWatch/ProcureWatch/backend/wallet';  //path.join(process.cwd(), 'wallet');
     const wallet = await Wallets.newFileSystemWallet(walletPath);
 
     // Check user identity
     const identity = await wallet.get(userId);
-    if (!identity) throw new Error(`Identity for user ${userId} not found in wallet`);
-
+    if (!identity) throw new Error(`Identity for user ${userId} not found in wallet `);
+    
     // Gateway setup
+    console.log(walletPath);
     const gateway = new Gateway();
     await gateway.connect(ccp, {
         wallet,
         identity: userId,
-        discovery: { enabled: true, asLocalhost: true }
+        discovery: { enabled: true, asLocalhost: true },
+        
+
     });
 
     // Get network and contract

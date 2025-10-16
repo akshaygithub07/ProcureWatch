@@ -28,15 +28,15 @@
   },
   "peers": {
     "peer0.org1.example.com": {
-      "url": "grpc://localhost:7051"
+      "url": "grpcs://localhost:7051"
     },
     "peer0.org2.example.com": {
-      "url": "grpc://localhost:8051"
+      "url": "grpcs://localhost:9051"
     }
   },
   "orderers": {
     "orderer.example.com": {
-      "url": "grpc://localhost:7050"
+      "url": "grpcs://localhost:7050"
     }
   },
   "channels": {
