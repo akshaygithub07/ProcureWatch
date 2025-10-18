@@ -3,31 +3,136 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { Gateway, Wallets } = require('fabric-network');
+const FabricCAServices = require('fabric-ca-client');
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
 app.use(bodyParser.json());
 
-// Config (edit these based on your setup)
-const ccpPath = path.resolve(__dirname, 'connection.json'); // Your network connection profile
-const contractName = 'bidding'; // Chaincode name as deployed
-const channelName = 'mychannel'; // Fabric channel
+// ---------------- CONFIG ----------------
+const ccpPath = '/home/akshay/ProcureWatch/ProcureWatch/backend/connection.json'; // Fabric CA-based connection profile
+const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 
-// Helper: Get Contract
-async function getContract(orgMSP, userId) {
-    // Load network config
-    const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
+const channelName = 'procurementchannel';
+const contractName = 'procurement';
 
-    // Wallet setup: here we expect user credentials to be present in the 'wallet' folder
-    const walletPath = path.join(process.cwd(), 'wallet');
+// Where wallet files are stored
+const walletPath ='/home/akshay/ProcureWatch/ProcureWatch/backend/wallet';
+
+// ---------------- UTILITIES ----------------
+
+// Get or create wallet
+async function getWallet() {
     const wallet = await Wallets.newFileSystemWallet(walletPath);
+    return wallet;
+}
 
-    // Check user identity
+// Enroll Org Admin (if not already enrolled)
+async function enrollAdmin(orgName) {
+    const wallet = await getWallet();
+
+    const orgInfo = ccp.organizations[orgName];
+    const orgCAName = orgInfo.certificateAuthorities[0];
+    const caInfo = ccp.certificateAuthorities[orgCAName];
+    const ca = new FabricCAServices(caInfo.url);
+
+    const adminIdentityLabel = `${orgName}-admin`;
+
+    const existing = await wallet.get(adminIdentityLabel);
+    if (existing) {
+        console.log(`Admin already enrolled for ${orgName}`);
+        return;
+    }
+
+    const enrollment = await ca.enroll({
+        enrollmentID: caInfo.registrar[0].enrollId,
+        enrollmentSecret: caInfo.registrar[0].enrollSecret
+    });
+
+    const identity = {
+        credentials: {
+            certificate: enrollment.certificate,
+            privateKey: enrollment.key.toBytes()
+        },
+        mspId: orgInfo.mspid,
+        type: 'X.509'
+    };
+
+    await wallet.put(adminIdentityLabel, identity);
+    console.log(`✅ Enrolled admin for ${orgName}`);
+}
+
+// Register + enroll user (if not already enrolled)
+async function registerAndEnrollUser(orgName, userId, affiliation) {
+    const wallet = await getWallet();
+    const orgInfo = ccp.organizations[orgName];
+    const orgCAName = orgInfo.certificateAuthorities[0];
+    const caInfo = ccp.certificateAuthorities[orgCAName];
+    const ca = new FabricCAServices(caInfo.url);
+
+    const adminLabel = `${orgName}-admin`;
+    const adminIdentity = await wallet.get(adminLabel);
+    if (!adminIdentity) {
+        throw new Error(`Admin identity not found for ${orgName}. Enroll admin first.`);
+    }
+
+    const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
+    const adminUser = await provider.getUserContext(adminIdentity, adminLabel);
+
+    const userExists = await wallet.get(userId);
+    if (userExists) {
+        console.log(`User ${userId} already enrolled`);
+        return; // already enrolled
+    }
+
+    let secret;
+    try {
+        // Attempt to register the user
+        secret = await ca.register({
+            affiliation: affiliation || '',
+            enrollmentID: userId,
+            role: 'client'
+        }, adminUser);
+    } catch (error) {
+        if (error.toString().includes('already registered')) {
+            console.log(`User ${userId} is already registered, skipping registration`);
+            // Use a default secret (must match what was used during first registration)
+            secret = 'adminpw'; // or whatever you originally registered
+        } else {
+            throw error;
+        }
+    }
+
+    const enrollment = await ca.enroll({
+        enrollmentID: userId,
+        enrollmentSecret: secret
+    });
+
+    const userIdentity = {
+        credentials: {
+            certificate: enrollment.certificate,
+            privateKey: enrollment.key.toBytes()
+        },
+        mspId: orgInfo.mspid,
+        type: 'X.509'
+    };
+
+    await wallet.put(userId, userIdentity);
+    console.log(`✅ Registered and enrolled user: ${userId} (${orgName})`);
+}
+
+
+// Helper: get Contract using Fabric CA wallet
+async function getContract(orgName, userId) {
+    const wallet = await getWallet();
     const identity = await wallet.get(userId);
-    if (!identity) throw new Error(`Identity for user ${userId} not found in wallet`);
 
-    // Gateway setup
+    if (!identity) {
+        // auto register/enroll user if missing
+        await registerAndEnrollUser(orgName, userId, `${orgName.toLowerCase()}.department1`);
+    }
+
     const gateway = new Gateway();
     await gateway.connect(ccp, {
         wallet,
@@ -35,29 +140,28 @@ async function getContract(orgMSP, userId) {
         discovery: { enabled: true, asLocalhost: true }
     });
 
-    // Get network and contract
     const network = await gateway.getNetwork(channelName);
     const contract = network.getContract(contractName);
 
     return { contract, gateway };
 }
 
-// Middleware to extract org and user from headers
+// Middleware to extract org + user headers
 function requireIdentity(req, res, next) {
-    req.orgMSP = req.header('X-Org-MSP');
+    req.orgName = req.header('X-Org-Name');
     req.userId = req.header('X-User-Id');
-    if (!req.orgMSP || !req.userId) {
-        return res.status(400).json({ error: 'Missing X-Org-MSP or X-User-Id headers' });
+    if (!req.orgName || !req.userId) {
+        return res.status(400).json({ error: 'Missing X-Org-Name or X-User-Id headers' });
     }
     next();
 }
 
-// --- API Endpoints ---
+// ---------------- API ENDPOINTS ----------------
 
-// Create tender (Buyer only)
+// Create tender
 app.post('/tenders', requireIdentity, async (req, res) => {
     try {
-        const { contract, gateway } = await getContract(req.orgMSP, req.userId);
+        const { contract, gateway } = await getContract(req.orgName, req.userId);
         const { tenderId, description, minAmount, maxAmount, deadline } = req.body;
         const result = await contract.submitTransaction(
             'createTender', tenderId, description, String(minAmount), String(maxAmount), deadline || ''
@@ -69,10 +173,10 @@ app.post('/tenders', requireIdentity, async (req, res) => {
     }
 });
 
-// Submit bid (Supplier only)
+// Submit bid
 app.post('/tenders/:tenderId/bids', requireIdentity, async (req, res) => {
     try {
-        const { contract, gateway } = await getContract(req.orgMSP, req.userId);
+        const { contract, gateway } = await getContract(req.orgName, req.userId);
         const { amount, proposal } = req.body;
         const tenderId = req.params.tenderId;
         const result = await contract.submitTransaction(
@@ -85,10 +189,10 @@ app.post('/tenders/:tenderId/bids', requireIdentity, async (req, res) => {
     }
 });
 
-// Award tender (Buyer only)
+// Award tender
 app.post('/tenders/:tenderId/award', requireIdentity, async (req, res) => {
     try {
-        const { contract, gateway } = await getContract(req.orgMSP, req.userId);
+        const { contract, gateway } = await getContract(req.orgName, req.userId);
         const { supplier } = req.body;
         const tenderId = req.params.tenderId;
         const result = await contract.submitTransaction(
@@ -101,10 +205,10 @@ app.post('/tenders/:tenderId/award', requireIdentity, async (req, res) => {
     }
 });
 
-// Cancel tender (Buyer only)
+// Cancel tender
 app.post('/tenders/:tenderId/cancel', requireIdentity, async (req, res) => {
     try {
-        const { contract, gateway } = await getContract(req.orgMSP, req.userId);
+        const { contract, gateway } = await getContract(req.orgName, req.userId);
         const { reason } = req.body;
         const tenderId = req.params.tenderId;
         const result = await contract.submitTransaction(
@@ -117,10 +221,11 @@ app.post('/tenders/:tenderId/cancel', requireIdentity, async (req, res) => {
     }
 });
 
-// Read tender (Anyone)
+// Read tender
 app.get('/tenders/:tenderId', requireIdentity, async (req, res) => {
     try {
-        const { contract, gateway } = await getContract(req.orgMSP, req.userId);
+        const { contract, gateway } = await getContract(req.orgName, req.userId);
+        // const { contract} = await getContract(req.orgName); //need to change later
         const tenderId = req.params.tenderId;
         const result = await contract.evaluateTransaction('readTender', tenderId);
         await gateway.disconnect();
@@ -130,10 +235,10 @@ app.get('/tenders/:tenderId', requireIdentity, async (req, res) => {
     }
 });
 
-// List tenders by status (role-based filtering as per contract logic)
+// List tenders
 app.get('/tenders', requireIdentity, async (req, res) => {
     try {
-        const { contract, gateway } = await getContract(req.orgMSP, req.userId);
+        const { contract, gateway } = await getContract(req.orgName, req.userId);
         const { status } = req.query;
         let result;
         if (status) {
@@ -148,10 +253,10 @@ app.get('/tenders', requireIdentity, async (req, res) => {
     }
 });
 
-// Get tender history (Auditor or Buyer)
+// Tender history
 app.get('/tenders/:tenderId/history', requireIdentity, async (req, res) => {
     try {
-        const { contract, gateway } = await getContract(req.orgMSP, req.userId);
+        const { contract, gateway } = await getContract(req.orgName, req.userId);
         const tenderId = req.params.tenderId;
         const result = await contract.evaluateTransaction('getTenderHistory', tenderId);
         await gateway.disconnect();
@@ -161,7 +266,11 @@ app.get('/tenders/:tenderId/history', requireIdentity, async (req, res) => {
     }
 });
 
-// Start Server
-app.listen(3000, () => {
-    console.log('Express server started on port 3000');
+// ---------------- START SERVER ----------------
+app.listen(3000, async () => {
+    console.log('✅ Express server started on port 3000');
+    // optional: pre-enroll admins
+    for (const orgName of Object.keys(ccp.organizations)) {
+        await enrollAdmin(orgName);
+    }
 });

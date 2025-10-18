@@ -1,0 +1,125 @@
+{
+  "name": "procurementchannel-network",
+  "version": "1.0.0",
+  "client": {
+    "organization": "Org1",
+    "connection": {
+      "timeout": {
+        "peer": {
+          "endorser": "300"
+        },
+        "orderer": "300"
+      }
+    }
+  },
+  "organizations": {
+    "Org1": {
+      "mspid": "Org1MSP",
+      "peers": [
+        "peer0.org1.example.com"
+      ],
+      "certificateAuthorities": [
+        "ca-org1"
+      ]
+    },
+    "Org2": {
+      "mspid": "Org2MSP",
+      "peers": [
+        "peer0.org2.example.com"
+      ],
+      "certificateAuthorities": [
+        "ca-org2"
+      ]
+    }
+  },
+  "peers": {
+    "peer0.org1.example.com": {
+      "url": "grpcs://localhost:7051",
+      "tlsCACerts": {
+        "pem": "-----BEGIN CERTIFICATE-----\nMIICJzCCAc2gAwIBAgIUWQgNcpYjgMWfihP+a/EiilhSdiQwCgYIKoZIzj0EAwIw\ncDELMAkGA1UEBhMCVVMxFzAVBgNVBAgTDk5vcnRoIENhcm9saW5hMQ8wDQYDVQQH\nEwZEdXJoYW0xGTAXBgNVBAoTEG9yZzEuZXhhbXBsZS5jb20xHDAaBgNVBAMTE2Nh\nLm9yZzEuZXhhbXBsZS5jb20wHhcNMjUxMDE2MTgwMDAwWhcNNDAxMDEyMTgwMDAw\nWjBwMQswCQYDVQQGEwJVUzEXMBUGA1UECBMOTm9ydGggQ2Fyb2xpbmExDzANBgNV\nBAcTBkR1cmhhbTEZMBcGA1UEChMQb3JnMS5leGFtcGxlLmNvbTEcMBoGA1UEAxMT\nY2Eub3JnMS5leGFtcGxlLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABIdV\nOokCk+llBRuRphnJM7VyRRfgxoUglFHQIHh39sRBR5bxPh7aADZ4Z2BlBRbYTGLT\n4pO2WHUuezEd3rYjB52jRTBDMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAG\nAQH/AgEBMB0GA1UdDgQWBBQjYuCM8VydVtwRZuBBrv/d4Mm06TAKBggqhkjOPQQD\nAgNIADBFAiEA37KYjO5SuXxsSBBa5IgZa1CNUeiN4E7anLtg0k4BS9cCIHTQiBDx\ncA1wfzwbEQLGkO97RmjXnj6gnIrxhrODnDPn\n-----END CERTIFICATE-----"
+
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.org1.example.com",
+        "hostnameOverride": "peer0.org1.example.com"
+      }
+    },
+    "peer0.org2.example.com": {
+      "url": "grpcs://localhost:9051",
+      "tlsCACerts": {
+        "pem":  "-----BEGIN CERTIFICATE-----\nMIICHjCCAcWgAwIBAgIUHSnPf2LGTsbbrZvaixscDqLrIsowCgYIKoZIzj0EAwIw\nbDELMAkGA1UEBhMCVUsxEjAQBgNVBAgTCUhhbXBzaGlyZTEQMA4GA1UEBxMHSHVy\nc2xleTEZMBcGA1UEChMQb3JnMi5leGFtcGxlLmNvbTEcMBoGA1UEAxMTY2Eub3Jn\nMi5leGFtcGxlLmNvbTAeFw0yNTEwMTYxODAwMDBaFw00MDEwMTIxODAwMDBaMGwx\nCzAJBgNVBAYTAlVLMRIwEAYDVQQIEwlIYW1wc2hpcmUxEDAOBgNVBAcTB0h1cnNs\nZXkxGTAXBgNVBAoTEG9yZzIuZXhhbXBsZS5jb20xHDAaBgNVBAMTE2NhLm9yZzIu\nZXhhbXBsZS5jb20wWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAS8so94uHfpL1d8\n8AMj1VrmLiw5aBaHxSIy6B6PfiSy55RMr7EHIa6HTzj8W9/RBQu0YWYp4UM6Poni\nWT3c6RnOo0UwQzAOBgNVHQ8BAf8EBAMCAQYwEgYDVR0TAQH/BAgwBgEB/wIBATAd\nBgNVHQ4EFgQUYsCMwWrr5uxyLiGIjGOBSUl0aV8wCgYIKoZIzj0EAwIDRwAwRAIg\nM7ogO9uZv9tZ1uKfBI+1VzP7qjB+Aqczkl4Aq9yjMIgCIBwj/aZmWckG80okgjFy\nTUr/s35qw1+B2StdzaMmkmEZ\n-----END CERTIFICATE-----"
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.org2.example.com",
+        "hostnameOverride": "peer0.org2.example.com"
+      }
+    }
+  },
+  "orderers": {
+    "orderer.example.com": {
+      "url": "grpcs://localhost:7050",
+      "tlsCACerts": {
+        "pem": "-----BEGIN CERTIFICATE-----\nMIICJzCCAc2gAwIBAgIUWQgNcpYjgMWfihP+a/EiilhSdiQwCgYIKoZIzj0EAwIw\ncDELMAkGA1UEBhMCVVMxFzAVBgNVBAgTDk5vcnRoIENhcm9saW5hMQ8wDQYDVQQH\nEwZEdXJoYW0xGTAXBgNVBAoTEG9yZzEuZXhhbXBsZS5jb20xHDAaBgNVBAMTE2Nh\nLm9yZzEuZXhhbXBsZS5jb20wHhcNMjUxMDE2MTgwMDAwWhcNNDAxMDEyMTgwMDAw\nWjBwMQswCQYDVQQGEwJVUzEXMBUGA1UECBMOTm9ydGggQ2Fyb2xpbmExDzANBgNV\nBAcTBkR1cmhhbTEZMBcGA1UEChMQb3JnMS5leGFtcGxlLmNvbTEcMBoGA1UEAxMT\nY2Eub3JnMS5leGFtcGxlLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABIdV\nOokCk+llBRuRphnJM7VyRRfgxoUglFHQIHh39sRBR5bxPh7aADZ4Z2BlBRbYTGLT\n4pO2WHUuezEd3rYjB52jRTBDMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAG\nAQH/AgEBMB0GA1UdDgQWBBQjYuCM8VydVtwRZuBBrv/d4Mm06TAKBggqhkjOPQQD\nAgNIADBFAiEA37KYjO5SuXxsSBBa5IgZa1CNUeiN4E7anLtg0k4BS9cCIHTQiBDx\ncA1wfzwbEQLGkO97RmjXnj6gnIrxhrODnDPn\n-----END CERTIFICATE-----"
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "orderer.example.com",
+        "hostnameOverride": "orderer.example.com"
+      }
+    }
+  },
+  "certificateAuthorities": {
+    "ca-org1": {
+      "url": "https://ca_org1:7054",
+      "caName": "ca-org1",
+      "tlsCACerts": {
+        "pem": "-----BEGIN CERTIFICATE-----\nMIICJzCCAc2gAwIBAgIUWQgNcpYjgMWfihP+a/EiilhSdiQwCgYIKoZIzj0EAwIw\ncDELMAkGA1UEBhMCVVMxFzAVBgNVBAgTDk5vcnRoIENhcm9saW5hMQ8wDQYDVQQH\nEwZEdXJoYW0xGTAXBgNVBAoTEG9yZzEuZXhhbXBsZS5jb20xHDAaBgNVBAMTE2Nh\nLm9yZzEuZXhhbXBsZS5jb20wHhcNMjUxMDE2MTgwMDAwWhcNNDAxMDEyMTgwMDAw\nWjBwMQswCQYDVQQGEwJVUzEXMBUGA1UECBMOTm9ydGggQ2Fyb2xpbmExDzANBgNV\nBAcTBkR1cmhhbTEZMBcGA1UEChMQb3JnMS5leGFtcGxlLmNvbTEcMBoGA1UEAxMT\nY2Eub3JnMS5leGFtcGxlLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABIdV\nOokCk+llBRuRphnJM7VyRRfgxoUglFHQIHh39sRBR5bxPh7aADZ4Z2BlBRbYTGLT\n4pO2WHUuezEd3rYjB52jRTBDMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAG\nAQH/AgEBMB0GA1UdDgQWBBQjYuCM8VydVtwRZuBBrv/d4Mm06TAKBggqhkjOPQQD\nAgNIADBFAiEA37KYjO5SuXxsSBBa5IgZa1CNUeiN4E7anLtg0k4BS9cCIHTQiBDx\ncA1wfzwbEQLGkO97RmjXnj6gnIrxhrODnDPn\n-----END CERTIFICATE-----"
+      },
+      "httpOptions": {
+        "verify": false
+      },
+      "registrar": [
+        {
+          "enrollId": "admin",
+          "enrollSecret": "admin"
+        }
+      ]
+    },
+    "ca-org2": {
+      "url": "https://ca_org2:8054",
+      "caName": "ca-org2",
+      "tlsCACerts": {
+        "pem": "-----BEGIN CERTIFICATE-----\nMIICHjCCAcWgAwIBAgIUHSnPf2LGTsbbrZvaixscDqLrIsowCgYIKoZIzj0EAwIw\nbDELMAkGA1UEBhMCVUsxEjAQBgNVBAgTCUhhbXBzaGlyZTEQMA4GA1UEBxMHSHVy\nc2xleTEZMBcGA1UEChMQb3JnMi5leGFtcGxlLmNvbTEcMBoGA1UEAxMTY2Eub3Jn\nMi5leGFtcGxlLmNvbTAeFw0yNTEwMTYxODAwMDBaFw00MDEwMTIxODAwMDBaMGwx\nCzAJBgNVBAYTAlVLMRIwEAYDVQQIEwlIYW1wc2hpcmUxEDAOBgNVBAcTB0h1cnNs\nZXkxGTAXBgNVBAoTEG9yZzIuZXhhbXBsZS5jb20xHDAaBgNVBAMTE2NhLm9yZzIu\nZXhhbXBsZS5jb20wWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAS8so94uHfpL1d8\n8AMj1VrmLiw5aBaHxSIy6B6PfiSy55RMr7EHIa6HTzj8W9/RBQu0YWYp4UM6Poni\nWT3c6RnOo0UwQzAOBgNVHQ8BAf8EBAMCAQYwEgYDVR0TAQH/BAgwBgEB/wIBATAd\nBgNVHQ4EFgQUYsCMwWrr5uxyLiGIjGOBSUl0aV8wCgYIKoZIzj0EAwIDRwAwRAIg\nM7ogO9uZv9tZ1uKfBI+1VzP7qjB+Aqczkl4Aq9yjMIgCIBwj/aZmWckG80okgjFy\nTUr/s35qw1+B2StdzaMmkmEZ\n-----END CERTIFICATE-----"
+      },
+      "httpOptions": {
+        "verify": false
+      },
+      "registrar": [
+        {
+          "enrollId": "admin",
+          "enrollSecret": "admin"
+        }
+      ]
+    }
+  },
+  "channels": {
+    "procurementchannel": {
+      "orderers": [
+        "orderer.example.com"
+      ],
+      "peers": {
+        "peer0.org1.example.com": {
+          "endorsingPeer": true,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        },
+        "peer0.org2.example.com": {
+          "endorsingPeer": true,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        }
+      }
+    }
+  }
+}
