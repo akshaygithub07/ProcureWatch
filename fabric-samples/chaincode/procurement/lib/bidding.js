@@ -398,6 +398,42 @@ class BiddingContract extends Contract {
         const tender = await this.readTender(ctx, tenderId);
         return tender.bids.length;
     }
+
+    async onboardOfficer(ctx, args) {
+        
+        const { officerId, departmentName, name, city } = JSON.parse(args);
+        console.log("ARGS-RAW:",args)
+        console.log("ARGS:",officerId, departmentName, name, city)
+        const { role, uuid: callerId } = this.getCallerAttributes(ctx);
+        const orgMSP = ctx.clientIdentity.getMSPID();
+
+        if (orgMSP !== 'Org1MSP' || role !== 'department') {
+            throw new Error('Only department can onboard officer.');
+        }
+
+        const officerJSON = await ctx.stub.getState(officerId);
+        if (officerJSON && officerJSON.length > 0) {
+            throw new Error(`officer ${officerId} already registerd by ${callerId}`);
+        }
+
+        const recordId = this.recordIdGenerator(ctx);
+        console.log("Record ID", recordId);
+        
+        const record = {
+            recordId,
+            officerId,
+            departmentId: callerId,
+            name,
+            departmentName,
+            city,
+           timestamp: ctx.stub.getTxTimestamp().seconds.low.toString()
+        };
+
+        const result = await ctx.stub.putState(officerId, Buffer.from(stringify(record)));
+        console.log('ONBOARD officer RESULT:',stringify(result))
+        return stringify(record);
+    }
+
 }
 
 module.exports = BiddingContract;
