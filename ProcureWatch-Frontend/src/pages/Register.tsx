@@ -60,6 +60,13 @@ function SignInComponent({ navigate }: { navigate: NavigateFunction }) {
         />
       </div>
       <div>
+        <label className="block text-sm text-gray-700 mb-1">UserID</label>
+        <input
+          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+          placeholder="Enter your userID"
+        />
+      </div>
+      <div>
         <label className="block text-sm text-gray-700 mb-1">Password</label>
         <input
           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
@@ -78,8 +85,96 @@ function SignInComponent({ navigate }: { navigate: NavigateFunction }) {
   );
 }
 
+// function RegisterComponent({ navigate }: { navigate: NavigateFunction }) {
+//   const [selectedRole, setSelectedRole] = useState("Vendor");
+
+//   const roles = ["Vendor", "Buyer", "Auditor", "Citizen"];
+
+//   return (
+//     <form className="space-y-4">
+//       <div>
+//         <label className="block text-sm text-gray-700 mb-1">Select Role</label>
+//         <div className="grid grid-cols-2 gap-2">
+//           {roles.map((role) => (
+//             <button
+//               type="button"
+//               key={role}
+//               onClick={() => setSelectedRole(role)}
+//               className={`py-2 text-sm rounded-md border ${
+//                 selectedRole === role
+//                   ? "bg-black text-white border-black"
+//                   : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+//               }`}
+//             >
+//               {role}
+//             </button>
+//           ))}
+//         </div>
+//       </div>
+//       <div>
+//         <label className="block text-sm text-gray-700 mb-1">UserID</label>
+//         <input
+//           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+//           placeholder="Enter your userID"
+//         />
+//       </div>
+//       <div>
+//         <label className="block text-sm text-gray-700 mb-1">First Name</label>
+//         <input
+//           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+//           placeholder="John"
+//           type="text"
+//         />
+//       </div>
+//       <div>
+//         <label className="block text-sm text-gray-700 mb-1">Last Name</label>
+//         <input
+//           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+//           placeholder="Doe"
+//           type="text"
+//         />
+//       </div>
+//       <div>
+//         <label className="block text-sm text-gray-700 mb-1">Email</label>
+//         <input
+//           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+//           placeholder="example@email.com"
+//           type="email"
+//         />
+//       </div>
+//       <div>
+//         <label className="block text-sm text-gray-700 mb-1">Password</label>
+//         <input
+//           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+//           placeholder="Enter your password"
+//           type="password"
+//         />
+//       </div>
+//       <div>
+//         <label className="block text-sm text-gray-700 mb-1">
+//           Confirm Password
+//         </label>
+//         <input
+//           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+//           placeholder="Confirm your password"
+//           type="password"
+//         />
+//       </div>
+//       <button
+//         type="button"
+//         onClick={() => navigate(`/${selectedRole}`)}
+//         className="w-full bg-black text-white py-2 rounded-md text-sm hover:opacity-90 transition"
+//       >
+//         Submit
+//       </button>
+//     </form>
+//   );
+// }
+
+
 function RegisterComponent({ navigate }: { navigate: NavigateFunction }) {
   const [selectedRole, setSelectedRole] = useState("Vendor");
+  const [buyerType, setBuyerType] = useState("Procurement Officer");
 
   const roles = ["Vendor", "Buyer", "Auditor", "Citizen"];
 
@@ -104,6 +199,54 @@ function RegisterComponent({ navigate }: { navigate: NavigateFunction }) {
           ))}
         </div>
       </div>
+
+      {/* Buyer Role Dropdown */}
+      {selectedRole === "Buyer" && (
+        <>
+        <div>
+          <label className="block text-sm text-gray-700 mb-1">
+            Buyer Role Type
+          </label>
+          <select
+            value={buyerType}
+            onChange={(e) => setBuyerType(e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+          >
+            <option>Procurement Officer</option>
+            <option>Delivery Officer</option>
+          </select>
+        </div>
+
+        <div>
+        <label className="block text-sm text-gray-700 mb-1">Institute</label>
+        <input
+          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+          placeholder="Enter your userID"
+        />
+      </div>
+       </>
+        
+      )}
+     {selectedRole === "Vendor"&&(
+       <div>
+        <label className="block text-sm text-gray-700 mb-1">Company Name</label>
+        <input
+          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+          placeholder="ABC COMPANY"
+        />
+      </div>
+
+     )}
+
+
+      <div>
+        <label className="block text-sm text-gray-700 mb-1">UserID</label>
+        <input
+          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+          placeholder="Enter your userID"
+        />
+      </div>
+
       <div>
         <label className="block text-sm text-gray-700 mb-1">First Name</label>
         <input
@@ -112,6 +255,7 @@ function RegisterComponent({ navigate }: { navigate: NavigateFunction }) {
           type="text"
         />
       </div>
+
       <div>
         <label className="block text-sm text-gray-700 mb-1">Last Name</label>
         <input
@@ -120,6 +264,7 @@ function RegisterComponent({ navigate }: { navigate: NavigateFunction }) {
           type="text"
         />
       </div>
+
       <div>
         <label className="block text-sm text-gray-700 mb-1">Email</label>
         <input
@@ -128,6 +273,7 @@ function RegisterComponent({ navigate }: { navigate: NavigateFunction }) {
           type="email"
         />
       </div>
+
       <div>
         <label className="block text-sm text-gray-700 mb-1">Password</label>
         <input
@@ -136,6 +282,7 @@ function RegisterComponent({ navigate }: { navigate: NavigateFunction }) {
           type="password"
         />
       </div>
+
       <div>
         <label className="block text-sm text-gray-700 mb-1">
           Confirm Password
@@ -146,9 +293,16 @@ function RegisterComponent({ navigate }: { navigate: NavigateFunction }) {
           type="password"
         />
       </div>
+
       <button
         type="button"
-        onClick={() => navigate(`/${selectedRole}`)}
+        onClick={() =>
+          navigate(
+            selectedRole === "Buyer"
+              ? `/buyer`
+              : `/${selectedRole.toLowerCase()}`
+          )
+        }
         className="w-full bg-black text-white py-2 rounded-md text-sm hover:opacity-90 transition"
       >
         Submit
@@ -158,3 +312,5 @@ function RegisterComponent({ navigate }: { navigate: NavigateFunction }) {
 }
 
 export default Register;
+
+

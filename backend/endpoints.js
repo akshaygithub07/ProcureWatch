@@ -167,7 +167,7 @@ router.get('/:tenderId', async (req, res) => {
 });
 
 /* GET ALL TENDERS */
-router.get('/', async (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const { user } = req.body;
         const { gateway, contract } = await getContract(user);

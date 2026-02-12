@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState , useEffect } from "react";
+
 import {
   Plus,
   Search,
@@ -14,48 +15,161 @@ import {
 } from "lucide-react";
 
 export function ProcurementRequests() {
+
+  useEffect(() => {
+  fetchTenders();
+}, []);
+
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showNewRequestForm, setShowNewRequestForm] = useState(false);
+const [showNewRequestForm, setShowNewRequestForm] = useState(false);
+const [requests, setRequests] = useState<Array<{
+  id: string;
+  title: string;
+  department: string;
+  requestedBy: string;
+  date: string;
+  minValue: string;
+  maxValue:string;
+  status: string;
+}>>([]);
+const [loading, setLoading] = useState(true);
 
-  const requests = [
-    {
-      id: "PR-2023-042",
-      title: "IT Infrastructure Upgrade",
-      department: "IT",
-      requestedBy: "John Smith",
-      date: "2023-10-01",
-      estimatedValue: "$120,000",
-      status: "Published",
-    },
-    {
-      id: "PR-2023-039",
-      title: "Office Supplies",
-      department: "Admin",
-      requestedBy: "Sarah Johnson",
-      date: "2023-09-28",
-      estimatedValue: "$25,000",
-      status: "Draft",
-    },
-    {
-      id: "PR-2023-036",
-      title: "Security Services",
-      department: "Facilities",
-      requestedBy: "Michael Brown",
-      date: "2023-09-25",
-      estimatedValue: "$75,000",
-      status: "Pending Approval",
-    },
-    {
-      id: "PR-2023-035",
-      title: "Software Licenses",
-      department: "IT",
-      requestedBy: "Emma Davis",
-      date: "2023-09-22",
-      estimatedValue: "$45,000",
-      status: "Approved",
-    },
-  ];
+
+const [formData, setFormData] = useState({
+  title: "",
+  department: "IT",
+  description: "",
+  minAmount: "15000",
+  maxAmount: "25000",
+  deadline: ""
+});
+
+
+
+  // const requests = [
+  //   {
+  //     id: "PR-2023-042",
+  //     title: "IT Infrastructure Upgrade",
+  //     department: "IT",
+  //     requestedBy: "John Smith",
+  //     date: "2023-10-01",
+  //     minValue: "$120,000",
+  //     maxValue: "$120,000",
+  //     status: "Published",
+  //   },
+  //   {
+  //     id: "PR-2023-039",
+  //     title: "Office Supplies",
+  //     department: "Admin",
+  //     requestedBy: "Sarah Johnson",
+  //     date: "2023-09-28",
+  //     minValue: "$25,000",
+  //     maxValue: "$25,000",
+  //     status: "Draft",
+  //   },
+  //   {
+  //     id: "PR-2023-036",
+  //     title: "Security Services",
+  //     department: "Facilities",
+  //     requestedBy: "Michael Brown",
+  //     date: "2023-09-25",
+  //     minValue: "$75,000",
+  //     maxValue: "$75,000",
+  //     status: "Pending Approval",
+  //   },
+  //   {
+  //     id: "PR-2023-035",
+  //     title: "Software Licenses",
+  //     department: "IT",
+  //     requestedBy: "Emma Davis",
+  //     date: "2023-09-22",
+  //     minValue: "$45,000",
+  //     maxValue: "$45,000",
+  //     status: "Approved",
+  //   },
+  // ];
+
+  const extractCN = (x509: string) => {
+  if (!x509) return "Unknown";
+  const match = x509.match(/CN=([^:]+)/);
+  return match ? match[1] : "Unknown";
+};
+
+const formatDate = (iso: string | number | Date) => {
+  if (!iso) return "-";
+  return new Date(iso).toLocaleDateString("en-IN");
+};
+
+  const fetchTenders = async () => {
+  try {
+    // const res = await fetch("http://localhost:3000/api/tenders/");
+    const res = await fetch("http://localhost:3000/api/tenders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        user: "ProcurementOfficer-Rama05"
+      })
+    });
+    const json = await res.json();
+
+    if (!json.success) throw new Error("API failed");
+
+    const mapped = json.data.map((tender: any) => ({
+      id: tender.tenderId,
+      title: tender.description,
+      department: tender.creatorMSP,        // Org1MSP → can map to IT later
+      requestedBy: extractCN(tender.creator),
+      date: formatDate(tender.createdAt),
+      minValue: `₹${tender.minAmount.toLocaleString()}`,
+      maxValue : `₹${tender.maxAmount.toLocaleString()}`,
+      status: tender.status
+    }));
+
+    setRequests(mapped);
+    setLoading(false);
+    console.log("RAW API DATA:", json.data);
+  } catch (err) {
+    console.error("Failed to load tenders:", err);
+    setLoading(false);
+    
+
+  }
+
+};
+  const createTender = async () => {
+  console.log(formData)
+  const payload = {
+    tenderId: `TND-${Math.floor(100000 + Math.random() * 900000)}`,
+    description: formData.description,
+    minAmount: Number(formData.minAmount),
+    maxAmount: Number(formData.maxAmount),
+    deadline: formData.deadline.split("-").reverse().join("-"), // dd-mm-yyyy
+    user: "ProcurementOfficer-Rama05"
+  };
+
+  try {
+    const res = await fetch("http://localhost:3000/api/tenders/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    console.log("Tender Created:", data);
+
+    alert("Tender created successfully ✅");
+    fetchTenders()
+    setShowNewRequestForm(false);
+  } catch (err) {
+    console.error(err);
+    alert("Failed to create tender ❌");
+  }
+};
 
   const filteredRequests = requests.filter((request) => {
     if (filter !== "all" && request.status.toLowerCase() !== filter.toLowerCase()) {
@@ -88,6 +202,35 @@ export function ProcurementRequests() {
         return <span className={`${base} bg-gray-100 text-gray-800`}>{status}</span>;
     }
   };
+  const cancelTender = async (tenderId: string) => {
+  const payload = {
+    tenderId,
+    reason: "not needed anymore",
+    user: "ProcurementOfficer-Rama05"
+  };
+
+  try {
+    const res = await fetch("http://localhost:3000/api/tenders/cancel", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error("Cancel failed");
+    }
+
+    alert("Tender cancelled successfully ❌");
+    fetchTenders(); // refresh table
+  } catch (err) {
+    console.error("Cancel failed:", err);
+    alert("Failed to cancel tender ❌");
+  }
+};
 
   return (
     <div
@@ -98,7 +241,7 @@ export function ProcurementRequests() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-black">Procurement Requests</h1>
         <button
-          onClick={() => setShowNewRequestForm(true)}
+          onClick={() => {setShowNewRequestForm(true)}}
           className="bg-black text-white px-4 py-2 rounded-xl flex items-center text-sm font-medium hover:bg-gray-800 shadow-sm"
         >
           <Plus size={16} className="mr-2" /> New Request
@@ -151,7 +294,8 @@ export function ProcurementRequests() {
                 <th className="px-6 py-3 text-left font-medium">Department</th>
                 <th className="px-6 py-3 text-left font-medium">Requested By</th>
                 <th className="px-6 py-3 text-left font-medium">Date</th>
-                <th className="px-6 py-3 text-left font-medium">Est. Value</th>
+                <th className="px-6 py-3 text-left font-medium">Min. Value</th>
+                <th className="px-6 py-3 text-left font-medium">Max. Value</th>
                 <th className="px-6 py-3 text-left font-medium">Status</th>
                 <th className="px-6 py-3 text-right font-medium">Actions</th>
               </tr>
@@ -166,13 +310,18 @@ export function ProcurementRequests() {
                   <td className="px-6 py-4">{request.department}</td>
                   <td className="px-6 py-4">{request.requestedBy}</td>
                   <td className="px-6 py-4">{request.date}</td>
-                  <td className="px-6 py-4">{request.estimatedValue}</td>
+                  <td className="px-6 py-4">{request.minValue}</td>
+                  <td className="px-6 py-4">{request.maxValue}</td>
                   <td className="px-6 py-4">{getStatusBadge(request.status)}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end space-x-3">
                       <button className="text-gray-600 hover:text-black"><Eye size={18} /></button>
                       <button className="text-gray-600 hover:text-black"><Edit size={18} /></button>
-                      <button className="text-gray-600 hover:text-red-600"><Trash size={18} /></button>
+                      <button className="text-gray-600 hover:text-red-600"  onClick={() => {
+    if (confirm(`Cancel tender ${request.id}?`)) {
+      cancelTender(request.id);
+    }
+  }}><Trash size={18} /></button>
                     </div>
                   </td>
                 </tr>
@@ -205,43 +354,80 @@ export function ProcurementRequests() {
             <div className="px-6 py-4 space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">Title</label>
-                <input className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black" />
+                <input
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">Department</label>
-                <select className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black">
+                <select
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
                   <option>IT</option>
                   <option>Admin</option>
                   <option>HR</option>
                   <option>Facilities</option>
                   <option>Operations</option>
                 </select>
+
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">Description</label>
-                <textarea rows={3} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black"></textarea>
+                  <textarea
+                    rows={3}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Estimated Value</label>
-                  <input type="text" placeholder="$0.00" className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black" />
+                  <label className="text-sm font-medium text-gray-700">Minimum Value</label>
+                  <input
+                      type="number"
+                      placeholder="Min Amount"
+                      value={formData.minAmount}
+                      onChange={(e) => setFormData({ ...formData, minAmount: e.target.value })}
+                      className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Maximum Value</label>
+                  <input
+                    type="number"
+                    placeholder="Max Amount"
+                    value={formData.maxAmount}
+                    onChange={(e) => setFormData({ ...formData, maxAmount: e.target.value })}
+                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Request Date</label>
-                  <input type="date" className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black" />
+                  <input
+                      type="date"
+                      value={formData.deadline}
+                      onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                      className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+
                 </div>
               </div>
             </div>
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
               <button onClick={() => setShowNewRequestForm(false)} className="px-4 py-2 border rounded-lg text-sm text-gray-700 hover:bg-gray-100">Cancel</button>
-              <button onClick={() => setShowNewRequestForm(false)} className="px-4 py-2 rounded-lg text-sm text-white bg-black hover:bg-gray-800">Create Request</button>
+              <button onClick={() => createTender()} className="px-4 py-2 rounded-lg text-sm text-white bg-black hover:bg-gray-800">Create Request</button>
             </div>
           </div>
         </div>
       )}
     </div>
-  );
-}
+  );}
+
 
 
 import {

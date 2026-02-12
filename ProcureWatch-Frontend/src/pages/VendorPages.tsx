@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState,useEffect } from 'react'
 import type { FormEvent } from 'react'
 import {
   Search,
@@ -19,7 +19,8 @@ import {
   ChevronRight,
   MapPin,
   Building,
-  X, 
+  X,
+  User, 
 } from 'lucide-react'
 // Active Tenders Page
 
@@ -48,6 +49,67 @@ export function ActiveTenders() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [showBidModal, setShowBidModal] = useState<boolean>(false)
   const [currentTender, setCurrentTender] = useState<Tender | null>(null)
+  const [tenders, setTenders] = useState<Tender[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const extractCN = (x509:any) => {
+  const match = x509.match(/CN=([^:\/]+)/);
+  return match ? match[1] : "Unknown";
+};
+
+  useEffect(() => {
+  const fetchTenders = async () => {
+    try {
+      setLoading(true);
+
+    const res = await fetch("http://localhost:3000/api/tenders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        user: "ProcurementOfficer-Rama05"
+      })
+    });
+      const json = await res.json();
+      console.log("Fabric tenders:", json.data);
+      if (!json.success) {
+        throw new Error("Failed to fetch tenders");
+      }
+
+      // 1. Take only ACTIVE (OPEN) tenders
+      // const openTenders = json.data.filter(
+      //   (tender:any) => tender.status === "OPEN"
+      // );
+
+      // 2. Convert blockchain tenders → UI format
+      const formatted = json.data.map((tender:any) => ({
+        id: tender.tenderId,
+        title: tender.description,
+        category: "Procurement",
+        budget: `₹${tender.minAmount.toLocaleString()} - ₹${tender.maxAmount.toLocaleString()}`,
+        deadline: tender.deadline || "2024-12-31",
+        location: tender.location || "Remote",
+        description: tender.description,
+        requirements: tender.requirements || [],
+        publishedDate: tender.createdAt.split("T")[0],
+        bidsCount: 0,
+      }));
+
+      setTenders(formatted);
+      console.log(tenders)
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load tenders");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchTenders();
+}, []);
+
   type BidDetails = Omit<Bid, 'tenderId'> & {
     validity?: number
     warranty?: string
@@ -61,59 +123,59 @@ export function ActiveTenders() {
     warranty: '',
   })
 
-  const tenders: Tender[] = [
-    {
-      id: 'T001',
-      title: 'Road Construction Project - Highway 101',
-      category: 'Infrastructure',
-      budget: '$2.5M',
-      deadline: '2024-02-15',
-      location: 'San Francisco, CA',
-      description:
-        'Complete reconstruction of 5-mile highway section including drainage systems.',
-      requirements: [
-        'Licensed Contractor',
-        'Previous Highway Experience',
-        'Equipment Available',
-      ],
-      publishedDate: '2024-01-10',
-      bidsCount: 12,
-    },
-    {
-      id: 'T002',
-      title: 'IT Equipment Procurement',
-      category: 'Technology',
-      budget: '$850K',
-      deadline: '2024-02-20',
-      location: 'Remote/Multiple Locations',
-      description:
-        'Supply of laptops, servers, and networking equipment for government offices.',
-      requirements: [
-        'Certified Vendor',
-        'Warranty Support',
-        'Installation Service',
-      ],
-      publishedDate: '2024-01-12',
-      bidsCount: 8,
-    },
-    {
-      id: 'T003',
-      title: 'Healthcare Supplies Contract',
-      category: 'Healthcare',
-      budget: '$1.2M',
-      deadline: '2024-02-25',
-      location: 'Los Angeles, CA',
-      description:
-        'Annual supply contract for medical equipment and consumables.',
-      requirements: [
-        'FDA Approved Products',
-        'Distribution Network',
-        'Quality Certifications',
-      ],
-      publishedDate: '2024-01-15',
-      bidsCount: 15,
-    },
-  ]
+//   const tenders: Tender[] = [
+//     {
+//       id: 'T001',
+//       title: 'Road Construction Project - Highway 101',
+//       category: 'Infrastructure',
+//       budget: '$2.5M',
+//       deadline: '2024-02-15',
+//       location: 'San Francisco, CA',
+//       description:
+//         'Complete reconstruction of 5-mile highway section including drainage systems.',
+//       requirements: [
+//         'Licensed Contractor',
+//         'Previous Highway Experience',
+//         'Equipment Available',
+//       ],
+//       publishedDate: '2024-01-10',
+//       bidsCount: 12,
+//     },
+//     {
+//       id: 'T002',
+//       title: 'IT Equipment Procurement',
+//       category: 'Technology',
+//       budget: '$850K',
+//       deadline: '2024-02-20',
+//       location: 'Remote/Multiple Locations',
+//       description:
+//         'Supply of laptops, servers, and networking equipment for government offices.',
+//       requirements: [
+//         'Certified Vendor',
+//         'Warranty Support',
+//         'Installation Service',
+//       ],
+//       publishedDate: '2024-01-12',
+//       bidsCount: 8,
+//     },
+//     {
+//       id: 'T003',
+//       title: 'Healthcare Supplies Contract',
+//       category: 'Healthcare',
+//       budget: '$1.2M',
+//       deadline: '2024-02-25',
+//       location: 'Los Angeles, CA',
+//       description:
+//         'Annual supply contract for medical equipment and consumables.',
+//       requirements: [
+//         'FDA Approved Products',
+//         'Distribution Network',
+//         'Quality Certifications',
+//       ],
+//       publishedDate: '2024-01-15',
+//       bidsCount: 15,
+//     },
+//   ]
 
   const categories: string[] = [
     'all',
@@ -132,23 +194,58 @@ export function ActiveTenders() {
     return matchesSearch && matchesCategory
   })
 
-  const handleSubmitBid = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!currentTender) return
+//   const handleSubmitBid = (e: FormEvent<HTMLFormElement>) => {
+//     e.preventDefault()
+//     if (!currentTender) return
 
-    const newBid: Bid = {
-      tenderId: currentTender.id,
-      price: bidDetails.price,
-      deliveryTime: bidDetails.deliveryTime,
-      proposal: bidDetails.proposal,
+//     const newBid: Bid = {
+//       tenderId: currentTender.id,
+//       price: bidDetails.price,
+//       deliveryTime: bidDetails.deliveryTime,
+//       proposal: bidDetails.proposal,
+//     }
+
+//     console.log('Bid submitted:', newBid)
+//     // TODO: Send this to backend API
+
+//     setBidDetails({ price: 0, deliveryTime: 0, proposal: '' })
+//     setShowBidModal(false)
+//   }
+const handleSubmitBid = async (e: FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  if (!currentTender) return;
+
+  const payload = {
+    tenderId: currentTender.id,
+    amount: bidDetails.price,
+    proposal: bidDetails.proposal,
+    user: "Vendor-Jay"   // change later if you store vendor login
+  };
+
+  try {
+    const res = await fetch("http://localhost:3000/api/tenders/bid", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.error || "Bid failed");
     }
 
-    console.log('Bid submitted:', newBid)
-    // TODO: Send this to backend API
-
-    setBidDetails({ price: 0, deliveryTime: 0, proposal: '' })
-    setShowBidModal(false)
+    alert("Bid submitted successfully ✅");
+    setShowBidModal(false);
+    setBidDetails({ price: 0, deliveryTime: 0, proposal: "" });
+  } catch (err: any) {
+    console.error(err);
+    alert("Failed to submit bid ❌");
   }
+};
+
 
   return (
     <div className="p-6" style={{ fontFamily: 'Poppins, sans-serif' }}>

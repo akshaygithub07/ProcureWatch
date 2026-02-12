@@ -1,8 +1,8 @@
 {
 	"network-configs": {
-		"first-network": {
-			"name": "first-network",
-			"profile": "./first-network.json"
+		"procurement-network": {
+			"name": "procurement-network",
+			"profile": "./procurement-network.json"
 		}
 	},
 	"license": "Apache-2.0"
