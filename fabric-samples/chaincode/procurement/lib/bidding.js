@@ -160,6 +160,54 @@ class BiddingContract extends Contract {
         return tender;
     }
 
+
+
+    // SUPPLIERS can view only their own bids across all tenders (new)
+async getMyBids(ctx) {
+
+    // Access Control: Only suppliers can call this
+    if (!this._isSupplier(ctx)) {
+        throw new Error('Access Denied: Only Supplier organizations can view their bids');
+    }
+
+    const callerId = ctx.clientIdentity.getID();
+    const callerMSP = ctx.clientIdentity.getMSPID();
+
+    const iterator = await ctx.stub.getStateByRange('', '');
+    const myBids = [];
+
+    let result = await iterator.next();
+
+    while (!result.done) {
+
+        const tender = JSON.parse(result.value.value.toString());
+
+        if (tender.bids && tender.bids.length > 0) {
+
+            const vendorBids = tender.bids.filter(bid => bid.supplier === callerId);
+
+            vendorBids.forEach(bid => {
+                myBids.push({
+                    tenderId: tender.tenderId,
+                    tenderDescription: tender.description,
+                    tenderStatus: tender.status,
+                    minAmount: tender.minAmount,
+                    maxAmount: tender.maxAmount,
+                    deadline: tender.deadline,
+                    ...bid
+                });
+            });
+        }
+
+        result = await iterator.next();
+    }
+
+    await iterator.close();
+
+    return myBids;
+}
+
+
     // ONLY BUYERS (Org1) can award tenders
     async awardTender(ctx, tenderId, supplier) {
         console.info(`Awarding tender: ${tenderId} to ${supplier}`);
@@ -433,6 +481,93 @@ class BiddingContract extends Contract {
         console.log('ONBOARD officer RESULT:',stringify(result))
         return stringify(record);
     }
+
+    // Everyone can see active tenders
+    async getActiveTenders(ctx) {
+
+        const allTenders = await this.getAllTenders(ctx);
+
+        return allTenders.filter(tender => tender.status === 'OPEN');
+    }
+    // SUPPLIER: Get awarded tenders where I am the winner
+    async getMyAwardedTenders(ctx) {
+
+        if (!this._isSupplier(ctx)) {
+            throw new Error('Access Denied: Only Supplier organizations can view their awarded tenders');
+        }
+
+        const callerId = ctx.clientIdentity.getID();
+        const allTenders = await this.getAllTenders(ctx);
+
+        return allTenders.filter(tender =>
+            tender.status === 'AWARDED' &&
+            tender.awardedTo === callerId
+        );
+    }
+
+    // BUYER: Get tenders created by logged-in officer
+    async getMyProcurementRequests(ctx) {
+
+        if (!this._isBuyer(ctx)) {
+            throw new Error('Access Denied: Only Buyer organization can view procurement requests');
+        }
+
+        const callerId = ctx.clientIdentity.getID();
+        const allTenders = await this.getAllTenders(ctx);
+
+        return allTenders.filter(tender =>
+            tender.creator === callerId
+        );
+    }
+
+    // BUYER: Get bids submitted on my tenders
+    async getBidsOnMyRequests(ctx) {
+
+        if (!this._isBuyer(ctx)) {
+            throw new Error('Access Denied: Only Buyer organization can view bids on their requests');
+        }
+
+        const callerId = ctx.clientIdentity.getID();
+        const allTenders = await this.getAllTenders(ctx);
+
+        const result = [];
+
+        allTenders.forEach(tender => {
+
+            if (tender.creator === callerId && tender.bids.length > 0) {
+
+                result.push({
+                    tenderId: tender.tenderId,
+                    description: tender.description,
+                    status: tender.status,
+                    bids: tender.bids
+                });
+            }
+        });
+
+        return result;
+    }
+
+    // BUYER: Get awarded tenders created by me
+    async getMyAwardedRequests(ctx) {
+
+        if (!this._isBuyer(ctx)) {
+            throw new Error('Access Denied: Only Buyer organization can view awarded tenders');
+        }
+
+        const callerId = ctx.clientIdentity.getID();
+        const allTenders = await this.getAllTenders(ctx);
+
+        return allTenders.filter(tender =>
+            tender.status === 'AWARDED' &&
+            tender.creator === callerId
+        );
+    }
+
+
+
+
+
 
 }
 

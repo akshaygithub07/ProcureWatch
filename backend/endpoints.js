@@ -187,7 +187,7 @@ router.post('/', async (req, res) => {
 });
 
 /* GET TENDERS BY STATUS */
-router.get('/status/:status', async (req, res) => {
+router.post('/status/:status', async (req, res) => {
     try {
         const { status } = req.params;
         const { user } = req.body;
@@ -235,7 +235,7 @@ router.get('/history/:tenderId', async (req, res) => {
 });
 
 /*LOWEST BID (BUYER/AUDITOR)*/
-router.get('/lowestBid/:tenderId', async (req, res) => {
+router.post('/lowestBid/:tenderId', async (req, res) => {
     try {
         const { tenderId } = req.params;
         const { user } = req.body;
@@ -259,7 +259,7 @@ router.get('/lowestBid/:tenderId', async (req, res) => {
 });
 
 /* BID COUNT */
-router.get('/bidCount/:tenderId', async (req, res) => {
+router.post('/bidCount/:tenderId', async (req, res) => {
     try {
         const { tenderId } = req.params;
         const { user } = req.body;
@@ -269,7 +269,7 @@ router.get('/bidCount/:tenderId', async (req, res) => {
             'getBidsCount',
             tenderId
         );
-
+         
         await gateway.disconnect();
 
         res.json({
@@ -281,5 +281,129 @@ router.get('/bidCount/:tenderId', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
+router.post('/bids/my', async (req, res) => {
+    try {
+        const { user } = req.body;
+        const { gateway, contract } = await getContract(user);
+        const result = await contract.evaluateTransaction('getMyBids');
+        const bids = JSON.parse(result.toString());
+
+        res.json({
+            success: true,
+            count: bids.length,
+            data: bids
+        });
+    } catch (error) {
+        console.error('Error getting my bids:', error);
+
+        res.status(403).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+router.post('/active', async (req, res) => {
+    try {
+        const { user } = req.body;
+        const { gateway, contract } = await getContract(user);
+        const result = await contract.evaluateTransaction('getActiveTenders');
+        const tenders = JSON.parse(result.toString());
+
+        res.json({
+            success: true,
+            data: tenders
+        });
+    } catch (error) {
+        console.error('Error getting active tenders:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+router.post('/my-awarded', async (req, res) => {
+    try {
+        const { user } = req.body;
+        const { gateway, contract } = await getContract(user);
+
+        const result = await contract.evaluateTransaction('getMyAwardedTenders');
+        const tenders = JSON.parse(result.toString());
+
+        res.json({
+            success: true,
+            data: tenders
+        });
+    } catch (error) {
+        console.error('Error getting awarded tenders:', error);
+        res.status(403).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+router.post('/my-requests', async (req, res) => {
+    try {
+        const { user } = req.body;
+        const { gateway, contract } = await getContract(user);
+        const result = await contract.evaluateTransaction('getMyProcurementRequests');
+        const tenders = JSON.parse(result.toString());
+
+        res.json({
+            success: true,
+            data: tenders
+        });
+    } catch (error) {
+        console.error('Error getting procurement requests:', error);
+        res.status(403).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+router.post('/my-requests/bids', async (req, res) => {
+    try {
+        const { user } = req.body;
+        const { gateway, contract } = await getContract(user);
+        const result = await contract.evaluateTransaction('getBidsOnMyRequests');
+        const bids = JSON.parse(result.toString());
+
+        res.json({
+            success: true,
+            data: bids
+        });
+    } catch (error) {
+        console.error('Error getting bids on requests:', error);
+        res.status(403).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+router.post('/my-awarded-requests', async (req, res) => {
+
+    try {
+        const { user } = req.body;
+        const { gateway, contract } = await getContract(user);
+        const result = await contract.evaluateTransaction('getMyAwardedRequests');
+        const tenders = JSON.parse(result.toString());
+
+        res.json({
+            success: true,
+            data: tenders
+        });
+    } catch (error) {
+        console.error('Error getting awarded requests:', error);
+        res.status(403).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 
 module.exports = router;

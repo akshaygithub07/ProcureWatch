@@ -63,7 +63,7 @@ export function ActiveTenders() {
     try {
       setLoading(true);
 
-    const res = await fetch("http://localhost:3000/api/tenders", {
+    const res = await fetch("http://localhost:3000/api/tenders/status/OPEN", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -505,62 +505,48 @@ const handleSubmitBid = async (e: FormEvent<HTMLFormElement>) => {
 }
 // My Bids Page
 export function MyBids() {
-  const bids = [
-    {
-      id: "B001",
-      tenderId: "T001",
-      tenderTitle: "Road Construction Project - Highway 101",
-      bidAmount: "$2.3M",
-      submittedDate: "2024-01-20",
-      status: "Under Review",
-      deadline: "2024-02-15",
-      ranking: 3,
-      totalBids: 12,
-      description:
-        "Bid proposal for large-scale highway construction project. Includes cost breakdown, timeline, and workforce allocation.",
-    },
-    {
-      id: "B002",
-      tenderId: "T005",
-      tenderTitle: "School Building Renovation",
-      bidAmount: "$1.8M",
-      submittedDate: "2024-01-18",
-      status: "Shortlisted",
-      deadline: "2024-02-10",
-      ranking: 2,
-      totalBids: 8,
-      description:
-        "Renovation of multiple school buildings including classrooms, labs, and auditoriums. Focus on modern safety standards.",
-    },
-    {
-      id: "B003",
-      tenderId: "T003",
-      tenderTitle: "Office Furniture Supply",
-      bidAmount: "$450K",
-      submittedDate: "2024-01-15",
-      status: "Rejected",
-      deadline: "2024-02-05",
-      ranking: 5,
-      totalBids: 10,
-      description:
-        "Supply of ergonomic office furniture (chairs, desks, and storage units) with 3-year warranty.",
-    },
-    {
-      id: "B004",
-      tenderId: "T007",
-      tenderTitle: "IT Infrastructure Upgrade",
-      bidAmount: "$920K",
-      submittedDate: "2024-01-22",
-      status: "Won",
-      deadline: "2024-02-18",
-      ranking: 1,
-      totalBids: 6,
-      description:
-        "Upgrading IT systems with new servers, cloud integration, and cybersecurity enhancements.",
-    },
-  ]
 
-  const [selectedBid, setSelectedBid] = useState<typeof bids[0] | null>(null)
+  // ✅ REPLACED static bids with state
+  const [bids, setBids] = useState<any[]>([])
+  const [selectedBid, setSelectedBid] = useState<any | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  // ✅ ADDED fetch function
+  useEffect(() => {
+    const fetchMyBids = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/tenders/bids/my",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              // 👈 send identity
+            },
+            body: JSON.stringify({
+                user: "Vendor-Jay"
+              })
+          }
+        )
+
+        const result = await response.json()
+
+        if (!result.success) {
+          throw new Error(result.error)
+        }
+
+        setBids(result.data)
+      } catch (err: any) {
+        console.error("Error fetching bids:", err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMyBids()
+  }, [])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -589,95 +575,85 @@ export function MyBids() {
   }
 
   return (
-    <div
-      className="p-6"
-      style={{
-        fontFamily: "Poppins, sans-serif",
-      }}
-    >
+    <div className="p-6" style={{ fontFamily: "Poppins, sans-serif" }}>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-black mb-2">My Bids</h1>
         <p className="text-gray-600">Track the status of your submitted bids</p>
       </div>
 
-      {/* Stats Cards */}
+      {/* ✅ Loading & Error */}
+      {loading && <p>Loading bids...</p>}
+      {error && <p className="text-red-500">{error}</p>}
+
+      {/* ✅ Stats Cards (now dynamic) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-2xl font-bold text-black">8</div>
+          <div className="text-2xl font-bold text-black">{bids.length}</div>
           <div className="text-sm text-gray-600">Total Bids</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-2xl font-bold text-green-600">3</div>
+          <div className="text-2xl font-bold text-green-600">
+            {bids.filter(b => b.status === "Won").length}
+          </div>
           <div className="text-sm text-gray-600">Won</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-2xl font-bold text-yellow-600">2</div>
+          <div className="text-2xl font-bold text-yellow-600">
+            {bids.filter(b => b.status === "Under Review").length}
+          </div>
           <div className="text-sm text-gray-600">Under Review</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-2xl font-bold text-blue-600">2</div>
+          <div className="text-2xl font-bold text-blue-600">
+            {bids.filter(b => b.status === "Shortlisted").length}
+          </div>
           <div className="text-sm text-gray-600">Shortlisted</div>
         </div>
       </div>
 
-      {/* Bids List */}
+      {/* ✅ Bids Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tender
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Bid Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ranking
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Submitted
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tender</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bid Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-gray-200">
-              {bids.map((bid) => (
-                <tr key={bid.id} className="hover:bg-gray-50">
+              {bids.map((bid, index) => (
+                <tr key={index} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div>
                       <div className="text-sm font-medium text-black">
-                        {bid.tenderTitle}
+                        {bid.tenderDescription}
                       </div>
                       <div className="text-sm text-gray-500">
                         ID: {bid.tenderId}
                       </div>
                     </div>
                   </td>
+
                   <td className="px-6 py-4 text-sm text-black font-medium">
-                    {bid.bidAmount}
+                    {bid.amount}
                   </td>
+
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
-                        bid.status
-                      )}`}
-                    >
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(bid.status)}`}>
                       {getStatusIcon(bid.status)}
                       <span className="ml-1">{bid.status}</span>
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {bid.ranking} of {bid.totalBids}
-                  </td>
+
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {bid.submittedDate}
                   </td>
+
                   <td className="px-6 py-4">
                     <button
                       onClick={() => setSelectedBid(bid)}
@@ -689,81 +665,10 @@ export function MyBids() {
                 </tr>
               ))}
             </tbody>
+
           </table>
         </div>
       </div>
-
-      {/* Modal for Bid Details */}
-      {selectedBid && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white p-8 rounded-lg w-full max-w-3xl shadow-lg relative">
-            <button
-              onClick={() => setSelectedBid(null)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
-            >
-              ✕
-            </button>
-            <h2 className="text-2xl font-bold mb-4 text-black">
-              Bid Details - {selectedBid.tenderTitle}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <p className="text-sm text-gray-500">Bid ID</p>
-                <p className="font-medium text-black">{selectedBid.id}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Tender ID</p>
-                <p className="font-medium text-black">{selectedBid.tenderId}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Bid Amount</p>
-                <p className="font-medium text-black">{selectedBid.bidAmount}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Status</p>
-                <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
-                    selectedBid.status
-                  )}`}
-                >
-                  {getStatusIcon(selectedBid.status)}
-                  <span className="ml-1">{selectedBid.status}</span>
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Ranking</p>
-                <p className="font-medium text-black">
-                  {selectedBid.ranking} of {selectedBid.totalBids}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Submitted On</p>
-                <p className="font-medium text-black">
-                  {selectedBid.submittedDate}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Deadline</p>
-                <p className="font-medium text-black">{selectedBid.deadline}</p>
-              </div>
-            </div>
-            <div className="mb-6">
-              <p className="text-sm text-gray-500">Description</p>
-              <p className="text-gray-700 leading-relaxed">
-                {selectedBid.description}
-              </p>
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={() => setSelectedBid(null)}
-                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
