@@ -4,15 +4,22 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const tenderRoutes = require('./endpoints')
 const org1Routes = require('./registerlogin')
-const authController = require('./controllers/authController');
+const authRoutes = require('./controllers/authController1');
 const org2Routes = require('./org2registerlogin');
+const connectDB = require('./config/db');
+
 
 const app = express();
+
+connectDB();
+
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.json());
 app.use('/api/tenders', tenderRoutes);
 app.use('/api/org1',org1Routes);
 app.use('/api/org2',org2Routes);
+app.use('/auth',authRoutes)
 
 
 // MongoDB connection
