@@ -84,6 +84,13 @@ class BiddingContract extends Contract {
         };
 
         await ctx.stub.putState(tenderId, Buffer.from(JSON.stringify(tender)));
+
+        await this._createAuditLog(ctx,
+            "TENDER_CREATED",
+            "TENDER",
+            tenderId,
+            { description, minAmount, maxAmount }
+);
         ctx.stub.setEvent('TenderCreated', Buffer.from(JSON.stringify(tender)));
         
         console.info(`Tender ${tenderId} created successfully`);
@@ -149,11 +156,19 @@ class BiddingContract extends Contract {
             supplierMSP,
             amount: bidAmount,
             proposal: proposal || '',
-            submittedAt
+            submittedAt,
+            status: 'PENDING'
         };
 
         tender.bids.push(bid);
         await ctx.stub.putState(tenderId, Buffer.from(JSON.stringify(tender)));
+
+        await this._createAuditLog(ctx,
+    "BID_SUBMITTED",
+    "BID",
+    tenderId,
+    { supplier, amount: bidAmount }
+);
         ctx.stub.setEvent('BidSubmitted', Buffer.from(JSON.stringify({ tenderId, bid })));
 
         console.info(`Bid submitted successfully for tender ${tenderId}`);
@@ -194,6 +209,7 @@ async getMyBids(ctx) {
                     minAmount: tender.minAmount,
                     maxAmount: tender.maxAmount,
                     deadline: tender.deadline,
+                    bidsCount: tender.bids ? tender.bids.length : 0,
                     ...bid
                 });
             });
@@ -251,13 +267,28 @@ async getMyBids(ctx) {
 
         const txTimestamp = ctx.stub.getTxTimestamp();
         
-
+        // Update bid statuses
+        tender.bids = tender.bids.map(bid => {
+            if (bid.supplier === supplier) {
+                bid.status = 'ACCEPTED';
+            } else {
+                bid.status = 'REJECTED';
+            }
+                return bid;
+            });
         tender.status = 'AWARDED';
         tender.awardedTo = supplier;
         tender.awardedAt = new Date(txTimestamp.seconds * 1000).toISOString();
         tender.awardedAmount = winningBid.amount;
 
         await ctx.stub.putState(tenderId, Buffer.from(JSON.stringify(tender)));
+
+        await this._createAuditLog(ctx,
+    "TENDER_AWARDED",
+    "TENDER",
+    tenderId,
+    { winner: supplier, amount: winningBid.amount }
+);
         ctx.stub.setEvent('TenderAwarded', Buffer.from(JSON.stringify({
             tenderId,
             awardedTo: supplier,
@@ -565,9 +596,180 @@ async getMyBids(ctx) {
     }
 
 
+    //New Addition(Needs to be deployed)
+    //1
+
+    async registerVendorOnLedger(ctx, vendorId, companyName, uuid) {
+
+    const exists = await ctx.stub.getState(vendorId);
+    if (exists && exists.length > 0) {
+        throw new Error(`Vendor ${vendorId} already exists on ledger`);
+    }
+
+    const vendor = {
+        docType: 'vendor',
+        vendorId,
+        companyName,
+        uuid,
+        createdAt: new Date().toISOString()
+    };
+
+    await ctx.stub.putState(
+        vendorId,
+        Buffer.from(JSON.stringify(vendor))
+    );
+
+    await this._createAuditLog(ctx,
+    "VENDOR_REGISTERED",
+    "VENDOR",
+    vendorId,
+    { companyName }
+);
+
+    return JSON.stringify(vendor);
+}
+
+//2
+async registerOfficerOnLedger(
+    ctx,
+    officerId,
+    firstName,
+    lastName,
+    email,
+    organizationId,
+    departmentId,
+    role,
+    uuid
+) {
+
+    const officerKey = ctx.stub.createCompositeKey('OFFICER', [officerId]);
+
+    const exists = await ctx.stub.getState(officerKey);
+    if (exists && exists.length > 0) {
+        throw new Error('Officer already exists');
+    }
+
+    const officer = {
+        docType: 'officer',
+        officerId,
+        firstName,
+        lastName,
+        email,
+        organizationId,
+        departmentId,
+        role,
+        uuid,
+        status: 'active',
+        createdAt: new Date().toISOString()
+    };
+
+    await ctx.stub.putState(
+        officerKey,
+        Buffer.from(JSON.stringify(officer))
+    );
+
+    return JSON.stringify(officer);
+}
 
 
+async _createAuditLog(ctx, actionType, entityType, entityId, details) {
 
+    const txId = ctx.stub.getTxID();
+    const timestamp = ctx.stub.getTxTimestamp();
+    const caller = ctx.clientIdentity.getID();
+    const callerMSP = ctx.clientIdentity.getMSPID();
+
+    const auditId = ctx.stub.createCompositeKey("AUDIT", [txId]);
+
+    const auditRecord = {
+        auditId,
+        actionType,
+        entityType,
+        entityId,
+        performedBy: caller,
+        performerMSP: callerMSP,
+        details: details || {},
+        timestamp: new Date(timestamp.seconds * 1000).toISOString()
+    };
+
+    await ctx.stub.putState(
+        auditId,
+        Buffer.from(JSON.stringify(auditRecord))
+    );
+
+    return auditRecord;
+}
+
+async getAuditTrail(ctx) {
+
+    if (!this._isAuditor(ctx)) {
+        throw new Error("Only auditors can access audit logs");
+    }
+
+    const iterator = await ctx.stub.getStateByPartialCompositeKey("AUDIT", []);
+    const results = [];
+
+    let result = await iterator.next();
+
+    while (!result.done) {
+
+        const record = JSON.parse(result.value.value.toString());
+        results.push(record);
+
+        result = await iterator.next();
+    }
+
+    await iterator.close();
+    return results;
+}
+async getTenderAuditTrail(ctx, tenderId) {
+
+    if (!this._isAuditor(ctx)) {
+        throw new Error("Only auditors can access audit logs");
+    }
+
+    const iterator = await ctx.stub.getStateByPartialCompositeKey("AUDIT", []);
+    const results = [];
+
+    let result = await iterator.next();
+
+    while (!result.done) {
+
+        const record = JSON.parse(result.value.value.toString());
+
+        if (record.entityId === tenderId) {
+            results.push(record);
+        }
+
+        result = await iterator.next();
+    }
+
+    await iterator.close();
+    return results;
+}
+
+async getAuditLogs(ctx) {
+
+    if (!this._isAuditor(ctx)) {
+        throw new Error("Only auditors can view audit logs");
+    }
+
+    const iterator = await ctx.stub.getStateByPartialCompositeKey("AUDIT", []);
+    const results = [];
+
+    let result = await iterator.next();
+
+    while (!result.done) {
+
+        const record = JSON.parse(result.value.value.toString());
+        results.push(record);
+
+        result = await iterator.next();
+    }
+
+    await iterator.close();
+    return results;
+}
 
 }
 

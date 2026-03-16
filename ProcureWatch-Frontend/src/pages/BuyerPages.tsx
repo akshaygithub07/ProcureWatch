@@ -104,7 +104,7 @@ const formatDate = (iso: string | number | Date) => {
   const fetchTenders = async () => {
   try {
     // const res = await fetch("http://localhost:3000/api/tenders/");
-    const res = await fetch("http://localhost:3000/api/tenders", {
+    const res = await fetch("http://localhost:3000/api/tenders/my-requests", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -188,15 +188,15 @@ const formatDate = (iso: string | number | Date) => {
   const getStatusBadge = (status: string) => {
     const base = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
     switch (status) {
-      case "Published":
+      case "AWARDED":
         return <span className={`${base} bg-green-100 text-green-800`}><Check size={12} className="mr-1" />{status}</span>;
       case "Draft":
         return <span className={`${base} bg-gray-100 text-gray-800`}><FileText size={12} className="mr-1" />{status}</span>;
-      case "Pending Approval":
+      case "OPEN":
         return <span className={`${base} bg-yellow-100 text-yellow-800`}><Clock size={12} className="mr-1" />{status}</span>;
       case "Approved":
         return <span className={`${base} bg-blue-100 text-blue-800`}><Check size={12} className="mr-1" />{status}</span>;
-      case "Rejected":
+      case "CANCELLED":
         return <span className={`${base} bg-red-100 text-red-800`}><X size={12} className="mr-1" />{status}</span>;
       default:
         return <span className={`${base} bg-gray-100 text-gray-800`}>{status}</span>;
@@ -456,206 +456,307 @@ export function VendorResponses() {
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedResponse, setSelectedResponse] = useState<VendorResponse | null>(null)
-  const responses: VendorResponse[] = [
-    {
-      id: 'VR-2023-087',
-      tenderId: 'T-2023-042',
-      tenderTitle: 'IT Infrastructure Upgrade',
-      vendor: 'Tech Solutions Inc.',
-      submittedDate: '2023-09-28',
-      amount: '$125,000',
-      status: 'Under Review',
-      rating: 4,
-      documents: [
-        {
-          name: 'Technical Proposal.pdf',
-          size: '2.4 MB',
+  const [responses, setResponses] = useState<VendorResponse[]>([])
+  const [loading, setLoading] = useState(true)
+  // const responses: VendorResponse[] = [
+  //   {
+  //     id: 'VR-2023-087',
+  //     tenderId: 'T-2023-042',
+  //     tenderTitle: 'IT Infrastructure Upgrade',
+  //     vendor: 'Tech Solutions Inc.',
+  //     submittedDate: '2023-09-28',
+  //     amount: '$125,000',
+  //     status: 'Under Review',
+  //     rating: 4,
+  //     documents: [
+  //       {
+  //         name: 'Technical Proposal.pdf',
+  //         size: '2.4 MB',
+  //       },
+  //       {
+  //         name: 'Financial Proposal.pdf',
+  //         size: '1.8 MB',
+  //       },
+  //       {
+  //         name: 'Company Profile.pdf',
+  //         size: '3.2 MB',
+  //       },
+  //     ],
+  //     messages: [
+  //       {
+  //         from: 'Jane Cooper',
+  //         message:
+  //           'Can you provide more details on the implementation timeline?',
+  //         date: '2023-09-29',
+  //       },
+  //       {
+  //         from: 'Tech Solutions Inc.',
+  //         message:
+  //           "We've attached a detailed implementation plan in our response. Typically we can complete this type of upgrade within 6-8 weeks.",
+  //         date: '2023-09-30',
+  //       },
+  //     ],
+  //     technicalScore: 85,
+  //     financialScore: 78,
+  //     totalScore: 82,
+  //   },
+  //   {
+  //     id: 'VR-2023-088',
+  //     tenderId: 'T-2023-042',
+  //     tenderTitle: 'IT Infrastructure Upgrade',
+  //     vendor: 'NetworkPro Systems',
+  //     submittedDate: '2023-09-27',
+  //     amount: '$142,500',
+  //     status: 'Under Review',
+  //     rating: 4.5,
+  //     documents: [
+  //       {
+  //         name: 'Technical Proposal.pdf',
+  //         size: '3.1 MB',
+  //       },
+  //       {
+  //         name: 'Financial Proposal.pdf',
+  //         size: '1.5 MB',
+  //       },
+  //       {
+  //         name: 'References.pdf',
+  //         size: '0.8 MB',
+  //       },
+  //     ],
+  //     messages: [
+  //       {
+  //         from: 'Jane Cooper',
+  //         message:
+  //           'Your proposal mentions proprietary hardware. Can you clarify if this will cause vendor lock-in?',
+  //         date: '2023-09-28',
+  //       },
+  //       {
+  //         from: 'NetworkPro Systems',
+  //         message:
+  //           "Our solution uses industry-standard protocols and interfaces. While our hardware is proprietary, it's designed to work with third-party systems.",
+  //         date: '2023-09-29',
+  //       },
+  //     ],
+  //     technicalScore: 92,
+  //     financialScore: 72,
+  //     totalScore: 84,
+  //   },
+  //   {
+  //     id: 'VR-2023-089',
+  //     tenderId: 'T-2023-042',
+  //     tenderTitle: 'IT Infrastructure Upgrade',
+  //     vendor: 'Global IT Services',
+  //     submittedDate: '2023-09-30',
+  //     amount: '$118,750',
+  //     status: 'Under Review',
+  //     rating: 3.5,
+  //     documents: [
+  //       {
+  //         name: 'Technical Proposal.pdf',
+  //         size: '2.8 MB',
+  //       },
+  //       {
+  //         name: 'Financial Proposal.pdf',
+  //         size: '1.2 MB',
+  //       },
+  //       {
+  //         name: 'Implementation Plan.pdf',
+  //         size: '1.6 MB',
+  //       },
+  //     ],
+  //     messages: [],
+  //     technicalScore: 76,
+  //     financialScore: 88,
+  //     totalScore: 81,
+  //   },
+  //   {
+  //     id: 'VR-2023-075',
+  //     tenderId: 'T-2023-039',
+  //     tenderTitle: 'Office Supplies',
+  //     vendor: 'Office Solutions Co.',
+  //     submittedDate: '2023-09-15',
+  //     amount: '$28,500',
+  //     status: 'Accepted',
+  //     rating: 5,
+  //     documents: [
+  //       {
+  //         name: 'Product Catalog.pdf',
+  //         size: '4.5 MB',
+  //       },
+  //       {
+  //         name: 'Price List.pdf',
+  //         size: '1.1 MB',
+  //       },
+  //       {
+  //         name: 'Delivery Terms.pdf',
+  //         size: '0.6 MB',
+  //       },
+  //     ],
+  //     messages: [
+  //       {
+  //         from: 'Sarah Johnson',
+  //         message: 'Can you confirm your delivery timeframes?',
+  //         date: '2023-09-16',
+  //       },
+  //       {
+  //         from: 'Office Solutions Co.',
+  //         message:
+  //           'We guarantee delivery within 48 hours of order placement for all standard items.',
+  //         date: '2023-09-16',
+  //       },
+  //     ],
+  //     technicalScore: 90,
+  //     financialScore: 95,
+  //     totalScore: 92,
+  //   },
+  //   {
+  //     id: 'VR-2023-062',
+  //     tenderId: 'T-2023-036',
+  //     tenderTitle: 'Security Services',
+  //     vendor: 'SecureGuard Inc.',
+  //     submittedDate: '2023-09-05',
+  //     amount: '$75,000',
+  //     status: 'Rejected',
+  //     rating: 2,
+  //     documents: [
+  //       {
+  //         name: 'Security Proposal.pdf',
+  //         size: '2.2 MB',
+  //       },
+  //       {
+  //         name: 'Guard Qualifications.pdf',
+  //         size: '1.7 MB',
+  //       },
+  //       {
+  //         name: 'Company License.pdf',
+  //         size: '0.4 MB',
+  //       },
+  //     ],
+  //     messages: [
+  //       {
+  //         from: 'Michael Brown',
+  //         message:
+  //           "Your proposal doesn't address our 24/7 coverage requirements.",
+  //         date: '2023-09-06',
+  //       },
+  //       {
+  //         from: 'SecureGuard Inc.',
+  //         message:
+  //           'We apologize for the oversight. We can provide 24/7 coverage at an additional cost of 15%.',
+  //         date: '2023-09-07',
+  //       },
+  //       {
+  //         from: 'Michael Brown',
+  //         message:
+  //           "That would exceed our budget constraints. We'll have to decline your proposal.",
+  //         date: '2023-09-08',
+  //       },
+  //     ],
+  //     technicalScore: 65,
+  //     financialScore: 70,
+  //     totalScore: 67,
+  //   },
+  // ]
+  const formatDate = (iso: string) => {
+  if (!iso) return "-"
+  return new Date(iso).toLocaleDateString("en-IN")
+}
+
+const fetchVendorResponses = async () => {
+  try {
+    setLoading(true)
+
+    const res = await fetch(
+      "http://localhost:3000/api/tenders/my-requests/bids",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
         },
+        body: JSON.stringify({
+          user: "ProcurementOfficer-Rama02"
+        })
+      }
+    )
+
+    const json = await res.json()
+
+    if (!res.ok || !json.success) {
+      throw new Error("API failed")
+    }
+
+    /*
+      Expected Backend Idea:
+
+      [
         {
-          name: 'Financial Proposal.pdf',
-          size: '1.8 MB',
-        },
-        {
-          name: 'Company Profile.pdf',
-          size: '3.2 MB',
-        },
-      ],
-      messages: [
-        {
-          from: 'Jane Cooper',
-          message:
-            'Can you provide more details on the implementation timeline?',
-          date: '2023-09-29',
-        },
-        {
-          from: 'Tech Solutions Inc.',
-          message:
-            "We've attached a detailed implementation plan in our response. Typically we can complete this type of upgrade within 6-8 weeks.",
-          date: '2023-09-30',
-        },
-      ],
-      technicalScore: 85,
-      financialScore: 78,
-      totalScore: 82,
-    },
-    {
-      id: 'VR-2023-088',
-      tenderId: 'T-2023-042',
-      tenderTitle: 'IT Infrastructure Upgrade',
-      vendor: 'NetworkPro Systems',
-      submittedDate: '2023-09-27',
-      amount: '$142,500',
-      status: 'Under Review',
-      rating: 4.5,
-      documents: [
-        {
-          name: 'Technical Proposal.pdf',
-          size: '3.1 MB',
-        },
-        {
-          name: 'Financial Proposal.pdf',
-          size: '1.5 MB',
-        },
-        {
-          name: 'References.pdf',
-          size: '0.8 MB',
-        },
-      ],
-      messages: [
-        {
-          from: 'Jane Cooper',
-          message:
-            'Your proposal mentions proprietary hardware. Can you clarify if this will cause vendor lock-in?',
-          date: '2023-09-28',
-        },
-        {
-          from: 'NetworkPro Systems',
-          message:
-            "Our solution uses industry-standard protocols and interfaces. While our hardware is proprietary, it's designed to work with third-party systems.",
-          date: '2023-09-29',
-        },
-      ],
-      technicalScore: 92,
-      financialScore: 72,
-      totalScore: 84,
-    },
-    {
-      id: 'VR-2023-089',
-      tenderId: 'T-2023-042',
-      tenderTitle: 'IT Infrastructure Upgrade',
-      vendor: 'Global IT Services',
-      submittedDate: '2023-09-30',
-      amount: '$118,750',
-      status: 'Under Review',
-      rating: 3.5,
-      documents: [
-        {
-          name: 'Technical Proposal.pdf',
-          size: '2.8 MB',
-        },
-        {
-          name: 'Financial Proposal.pdf',
-          size: '1.2 MB',
-        },
-        {
-          name: 'Implementation Plan.pdf',
-          size: '1.6 MB',
-        },
-      ],
-      messages: [],
-      technicalScore: 76,
-      financialScore: 88,
-      totalScore: 81,
-    },
-    {
-      id: 'VR-2023-075',
-      tenderId: 'T-2023-039',
-      tenderTitle: 'Office Supplies',
-      vendor: 'Office Solutions Co.',
-      submittedDate: '2023-09-15',
-      amount: '$28,500',
-      status: 'Accepted',
-      rating: 5,
-      documents: [
-        {
-          name: 'Product Catalog.pdf',
-          size: '4.5 MB',
-        },
-        {
-          name: 'Price List.pdf',
-          size: '1.1 MB',
-        },
-        {
-          name: 'Delivery Terms.pdf',
-          size: '0.6 MB',
-        },
-      ],
-      messages: [
-        {
-          from: 'Sarah Johnson',
-          message: 'Can you confirm your delivery timeframes?',
-          date: '2023-09-16',
-        },
-        {
-          from: 'Office Solutions Co.',
-          message:
-            'We guarantee delivery within 48 hours of order placement for all standard items.',
-          date: '2023-09-16',
-        },
-      ],
-      technicalScore: 90,
-      financialScore: 95,
-      totalScore: 92,
-    },
-    {
-      id: 'VR-2023-062',
-      tenderId: 'T-2023-036',
-      tenderTitle: 'Security Services',
-      vendor: 'SecureGuard Inc.',
-      submittedDate: '2023-09-05',
-      amount: '$75,000',
-      status: 'Rejected',
-      rating: 2,
-      documents: [
-        {
-          name: 'Security Proposal.pdf',
-          size: '2.2 MB',
-        },
-        {
-          name: 'Guard Qualifications.pdf',
-          size: '1.7 MB',
-        },
-        {
-          name: 'Company License.pdf',
-          size: '0.4 MB',
-        },
-      ],
-      messages: [
-        {
-          from: 'Michael Brown',
-          message:
-            "Your proposal doesn't address our 24/7 coverage requirements.",
-          date: '2023-09-06',
-        },
-        {
-          from: 'SecureGuard Inc.',
-          message:
-            'We apologize for the oversight. We can provide 24/7 coverage at an additional cost of 15%.',
-          date: '2023-09-07',
-        },
-        {
-          from: 'Michael Brown',
-          message:
-            "That would exceed our budget constraints. We'll have to decline your proposal.",
-          date: '2023-09-08',
-        },
-      ],
-      technicalScore: 65,
-      financialScore: 70,
-      totalScore: 67,
-    },
-  ]
-  const filteredResponses = responses.filter((response) => {
+          tenderId,
+          description,
+          status,
+          awardedVendor,
+          bids: [...]
+        }
+      ]
+    */
+
+    const mapped: VendorResponse[] = []
+
+    json.data.forEach((tender: any) => {
+      const tenderStatus = tender.status
+      const awardedVendor = tender.awardedVendor
+
+      tender.bids.forEach((bid: any) => {
+
+        // -------- STATUS LOGIC ----------
+        let status = "Under Review"
+
+        if (tenderStatus === "AWARDED") {
+          status =
+            bid.vendor === awardedVendor
+              ? "Accepted"
+              : "Rejected"
+        }
+
+        mapped.push({
+          id: bid.bidId,
+          tenderId: tender.tenderId,
+          tenderTitle: tender.description,
+
+          // as requested
+          vendor: "ABC Company",
+
+          submittedDate: formatDate(bid.submittedAt),
+
+          amount: `₹${Number(bid.amount).toLocaleString()}`,
+
+          status,
+
+          rating: 4,
+
+          // placeholders until backend supports them
+          documents: [],
+          messages: [],
+
+          technicalScore: bid.technicalScore ?? 80,
+          financialScore: bid.financialScore ?? 80,
+          totalScore: bid.totalScore ?? 80
+        })
+      })
+    })
+
+    setResponses(mapped)
+  } catch (err) {
+    console.error("Failed loading vendor responses", err)
+  } finally {
+    setLoading(false)
+  }
+}
+
+  useEffect(() => {
+  fetchVendorResponses()
+}, [])
+
+  const filteredResponses = responses.filter((response:any) => {
     // Apply status filter
     if (
       filter !== 'all' &&
@@ -1066,599 +1167,102 @@ import {
   MoreHorizontalIcon,
   CalendarIcon,
 } from 'lucide-react'
-export function Contracts() {
+
+type Contract = {
+  id: string
+  title: string
+  vendor: string
+  startDate: string
+  endDate: string
+  value: string
+  status: string
+  department: string
+  type: string
+  description: string
+  documents: { name: string; size: string }[]
+  milestones: { name: string; date: string; completed: boolean }[]
+  payments: { amount: string; date: string; status: string; description: string }[]
+  contacts: { name: string; role: string; email: string; phone: string }[]
+}
+
+export function BuyerContracts() {
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedContract, setSelectedContract] = useState<
-    | {
-        id: string
-        title: string
-        vendor: string
-        startDate: string
-        endDate: string
-        value: string
-        status: string
-        department: string
-        type: string
-        description: string
-        documents: { name: string; size: string }[]
-        milestones: { name: string; date: string; completed: boolean }[]
-        payments: { amount: string; date: string; status: string; description: string }[]
-        contacts: { name: string; role: string; email: string; phone: string }[]
+  const [contracts, setContracts] = useState<Contract[]>([])
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchContracts = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/tenders/my-awarded-requests",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              // 👈 send identity
+            },
+            body: JSON.stringify({
+                user: "ProcurementOfficer-Rama02"
+              })
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch awarded contracts')
+        }
+
+        const data = await response.json()
+        console.log(data)
+        const formattedData: Contract[] = data.data.map((item: any) => ({
+          id: item.tenderId || item.id,
+          title: item.description || 'Awarded Tender',
+          vendor: item.vendorId || item.vendor || 'Unknown Vendor',
+          startDate: item.createdAt || 'N/A',
+          endDate: item.deadline || 'N/A',
+          value: item.bids?.[0]?.amount ? `₹${item.bids[0].amount}` : '₹0',
+          status: item.status || 'Active',
+          department: item.department || 'N/A',
+          type: item.type || 'Service',
+          description: item.description || '',
+          documents: item.documents || [],
+          milestones: item.milestones || [],
+          payments: item.payments || [],
+          contacts: item.contacts || [],
+        }))
+
+        setContracts(formattedData)
+        if (formattedData.length > 0) {
+          setSelectedContract(formattedData[0])
+        }
+        setLoading(false)
+      } catch (err: any) {
+        setError(err.message)
+        setLoading(false)
       }
-    | null
-  >(null)
-  const contracts = [
-    {
-      id: 'C-2023-042',
-      title: 'IT Infrastructure Upgrade',
-      vendor: 'Tech Solutions Inc.',
-      startDate: '2023-10-15',
-      endDate: '2024-04-15',
-      value: '$125,000',
-      status: 'Active',
-      department: 'IT',
-      type: 'Service',
-      description:
-        'Upgrade of server infrastructure and network equipment for headquarters.',
-      documents: [
-        {
-          name: 'Contract Agreement.pdf',
-          size: '2.4 MB',
-        },
-        {
-          name: 'Statement of Work.pdf',
-          size: '1.8 MB',
-        },
-        {
-          name: 'Service Level Agreement.pdf',
-          size: '1.2 MB',
-        },
-      ],
-      milestones: [
-        {
-          name: 'Project Kickoff',
-          date: '2023-10-20',
-          completed: true,
-        },
-        {
-          name: 'Hardware Delivery',
-          date: '2023-11-15',
-          completed: true,
-        },
-        {
-          name: 'Installation Phase',
-          date: '2023-12-15',
-          completed: false,
-        },
-        {
-          name: 'Testing & Validation',
-          date: '2024-01-30',
-          completed: false,
-        },
-        {
-          name: 'Final Acceptance',
-          date: '2024-03-15',
-          completed: false,
-        },
-      ],
-      payments: [
-        {
-          amount: '$37,500',
-          date: '2023-10-15',
-          status: 'Paid',
-          description: '30% Deposit',
-        },
-        {
-          amount: '$50,000',
-          date: '2023-12-15',
-          status: 'Pending',
-          description: '40% Upon Installation',
-        },
-        {
-          amount: '$37,500',
-          date: '2024-03-15',
-          status: 'Scheduled',
-          description: '30% Upon Completion',
-        },
-      ],
-      contacts: [
-        {
-          name: 'John Smith',
-          role: 'Project Manager',
-          email: 'john.smith@techsolutions.com',
-          phone: '555-123-4567',
-        },
-        {
-          name: 'Sarah Johnson',
-          role: 'Account Manager',
-          email: 'sarah.johnson@techsolutions.com',
-          phone: '555-987-6543',
-        },
-      ],
-    },
-    {
-      id: 'C-2023-039',
-      title: 'Office Supplies',
-      vendor: 'Office Solutions Co.',
-      startDate: '2023-10-01',
-      endDate: '2024-09-30',
-      value: '$28,500',
-      status: 'Active',
-      department: 'Admin',
-      type: 'Goods',
-      description:
-        'Annual procurement of office supplies including paper, stationery, and printer consumables.',
-      documents: [
-        {
-          name: 'Contract Agreement.pdf',
-          size: '1.5 MB',
-        },
-        {
-          name: 'Price List.pdf',
-          size: '0.8 MB',
-        },
-      ],
-      milestones: [
-        {
-          name: 'Initial Order',
-          date: '2023-10-05',
-          completed: true,
-        },
-        {
-          name: 'Q1 Review',
-          date: '2023-12-31',
-          completed: false,
-        },
-        {
-          name: 'Q2 Review',
-          date: '2024-03-31',
-          completed: false,
-        },
-        {
-          name: 'Q3 Review',
-          date: '2024-06-30',
-          completed: false,
-        },
-      ],
-      payments: [
-        {
-          amount: '$7,125',
-          date: '2023-10-05',
-          status: 'Paid',
-          description: 'Q4 2023 Order',
-        },
-        {
-          amount: '$7,125',
-          date: '2024-01-05',
-          status: 'Scheduled',
-          description: 'Q1 2024 Order',
-        },
-        {
-          amount: '$7,125',
-          date: '2024-04-05',
-          status: 'Scheduled',
-          description: 'Q2 2024 Order',
-        },
-        {
-          amount: '$7,125',
-          date: '2024-07-05',
-          status: 'Scheduled',
-          description: 'Q3 2024 Order',
-        },
-      ],
-      contacts: [
-        {
-          name: 'Emma Davis',
-          role: 'Account Representative',
-          email: 'emma.davis@officesolutions.com',
-          phone: '555-222-3333',
-        },
-      ],
-    },
-    {
-      id: 'C-2023-036',
-      title: 'Security Services',
-      vendor: 'Guardian Security Inc.',
-      startDate: '2023-09-15',
-      endDate: '2024-09-14',
-      value: '$75,000',
-      status: 'Active',
-      department: 'Facilities',
-      type: 'Service',
-      description: '24/7 security services for the main campus buildings.',
-      documents: [
-        {
-          name: 'Contract Agreement.pdf',
-          size: '2.2 MB',
-        },
-        {
-          name: 'Security Protocols.pdf',
-          size: '1.3 MB',
-        },
-        {
-          name: 'Guard Schedules.pdf',
-          size: '0.9 MB',
-        },
-      ],
-      milestones: [
-        {
-          name: 'Service Start',
-          date: '2023-09-15',
-          completed: true,
-        },
-        {
-          name: 'Q1 Performance Review',
-          date: '2023-12-15',
-          completed: false,
-        },
-        {
-          name: 'Q2 Performance Review',
-          date: '2024-03-15',
-          completed: false,
-        },
-        {
-          name: 'Q3 Performance Review',
-          date: '2024-06-15',
-          completed: false,
-        },
-      ],
-      payments: [
-        {
-          amount: '$18,750',
-          date: '2023-09-15',
-          status: 'Paid',
-          description: 'Q3 2023 Service',
-        },
-        {
-          amount: '$18,750',
-          date: '2023-12-15',
-          status: 'Pending',
-          description: 'Q4 2023 Service',
-        },
-        {
-          amount: '$18,750',
-          date: '2024-03-15',
-          status: 'Scheduled',
-          description: 'Q1 2024 Service',
-        },
-        {
-          amount: '$18,750',
-          date: '2024-06-15',
-          status: 'Scheduled',
-          description: 'Q2 2024 Service',
-        },
-      ],
-      contacts: [
-        {
-          name: 'Michael Brown',
-          role: 'Operations Manager',
-          email: 'michael.brown@guardian.com',
-          phone: '555-444-5555',
-        },
-        {
-          name: 'Robert Taylor',
-          role: 'Site Supervisor',
-          email: 'robert.taylor@guardian.com',
-          phone: '555-666-7777',
-        },
-      ],
-    },
-    {
-      id: 'C-2023-032',
-      title: 'Marketing Campaign',
-      vendor: 'CreativeEdge Media',
-      startDate: '2023-08-01',
-      endDate: '2023-12-31',
-      value: '$85,000',
-      status: 'Active',
-      department: 'Marketing',
-      type: 'Service',
-      description:
-        'Q3-Q4 marketing campaign across digital and traditional media channels.',
-      documents: [
-        {
-          name: 'Contract Agreement.pdf',
-          size: '1.8 MB',
-        },
-        {
-          name: 'Campaign Strategy.pdf',
-          size: '2.5 MB',
-        },
-        {
-          name: 'Creative Assets.zip',
-          size: '15.2 MB',
-        },
-      ],
-      milestones: [
-        {
-          name: 'Strategy Approval',
-          date: '2023-08-10',
-          completed: true,
-        },
-        {
-          name: 'Creative Development',
-          date: '2023-09-15',
-          completed: true,
-        },
-        {
-          name: 'Campaign Launch',
-          date: '2023-10-01',
-          completed: true,
-        },
-        {
-          name: 'Midterm Report',
-          date: '2023-11-15',
-          completed: false,
-        },
-        {
-          name: 'Final Analysis',
-          date: '2024-01-15',
-          completed: false,
-        },
-      ],
-      payments: [
-        {
-          amount: '$25,500',
-          date: '2023-08-01',
-          status: 'Paid',
-          description: '30% Upfront',
-        },
-        {
-          amount: '$42,500',
-          date: '2023-10-01',
-          status: 'Paid',
-          description: '50% At Launch',
-        },
-        {
-          amount: '$17,000',
-          date: '2024-01-15',
-          status: 'Scheduled',
-          description: '20% Upon Completion',
-        },
-      ],
-      contacts: [
-        {
-          name: 'David Wilson',
-          role: 'Creative Director',
-          email: 'david.wilson@creativeedge.com',
-          phone: '555-888-9999',
-        },
-        {
-          name: 'Patricia Moore',
-          role: 'Account Director',
-          email: 'patricia.moore@creativeedge.com',
-          phone: '555-111-2222',
-        },
-      ],
-    },
-    {
-      id: 'C-2023-028',
-      title: 'Software Licenses',
-      vendor: 'TechCore Systems',
-      startDate: '2023-07-01',
-      endDate: '2024-06-30',
-      value: '$45,000',
-      status: 'Active',
-      department: 'IT',
-      type: 'License',
-      description:
-        'Annual enterprise software licenses for productivity suite and security tools.',
-      documents: [
-        {
-          name: 'License Agreement.pdf',
-          size: '1.6 MB',
-        },
-        {
-          name: 'Terms of Service.pdf',
-          size: '0.9 MB',
-        },
-      ],
-      milestones: [
-        {
-          name: 'License Activation',
-          date: '2023-07-01',
-          completed: true,
-        },
-        {
-          name: 'Q2 Usage Review',
-          date: '2023-12-31',
-          completed: false,
-        },
-        {
-          name: 'Renewal Discussion',
-          date: '2024-04-30',
-          completed: false,
-        },
-      ],
-      payments: [
-        {
-          amount: '$45,000',
-          date: '2023-07-01',
-          status: 'Paid',
-          description: 'Full Annual Payment',
-        },
-      ],
-      contacts: [
-        {
-          name: 'Alex Morgan',
-          role: 'Account Manager',
-          email: 'alex.morgan@techcore.com',
-          phone: '555-333-4444',
-        },
-      ],
-    },
-    {
-      id: 'C-2023-024',
-      title: 'Fleet Vehicles',
-      vendor: 'AutoFleet Enterprises',
-      startDate: '2023-06-15',
-      endDate: '2023-08-15',
-      value: '$220,000',
-      status: 'Completed',
-      department: 'Operations',
-      type: 'Goods',
-      description: 'Procurement of 5 new delivery vehicles.',
-      documents: [
-        {
-          name: 'Purchase Agreement.pdf',
-          size: '3.2 MB',
-        },
-        {
-          name: 'Vehicle Specifications.pdf',
-          size: '1.8 MB',
-        },
-        {
-          name: 'Warranty Information.pdf',
-          size: '1.1 MB',
-        },
-      ],
-      milestones: [
-        {
-          name: 'Order Placement',
-          date: '2023-06-15',
-          completed: true,
-        },
-        {
-          name: 'Vehicle Production',
-          date: '2023-07-15',
-          completed: true,
-        },
-        {
-          name: 'Delivery & Inspection',
-          date: '2023-08-10',
-          completed: true,
-        },
-        {
-          name: 'Registration Complete',
-          date: '2023-08-15',
-          completed: true,
-        },
-      ],
-      payments: [
-        {
-          amount: '$66,000',
-          date: '2023-06-15',
-          status: 'Paid',
-          description: '30% Deposit',
-        },
-        {
-          amount: '$154,000',
-          date: '2023-08-15',
-          status: 'Paid',
-          description: '70% Upon Delivery',
-        },
-      ],
-      contacts: [
-        {
-          name: 'James Thompson',
-          role: 'Sales Manager',
-          email: 'james.thompson@autofleet.com',
-          phone: '555-777-8888',
-        },
-      ],
-    },
-    {
-      id: 'C-2023-018',
-      title: 'Office Renovation',
-      vendor: 'BuildRight Construction',
-      startDate: '2023-05-01',
-      endDate: '2023-07-31',
-      value: '$180,000',
-      status: 'Completed',
-      department: 'Facilities',
-      type: 'Service',
-      description: 'Renovation of the 3rd floor office space.',
-      documents: [
-        {
-          name: 'Contract Agreement.pdf',
-          size: '4.1 MB',
-        },
-        {
-          name: 'Floor Plans.pdf',
-          size: '2.7 MB',
-        },
-        {
-          name: 'Material Specifications.pdf',
-          size: '1.9 MB',
-        },
-        {
-          name: 'Completion Certificate.pdf',
-          size: '0.8 MB',
-        },
-      ],
-      milestones: [
-        {
-          name: 'Design Approval',
-          date: '2023-05-05',
-          completed: true,
-        },
-        {
-          name: 'Demolition Phase',
-          date: '2023-05-15',
-          completed: true,
-        },
-        {
-          name: 'Construction Phase',
-          date: '2023-06-30',
-          completed: true,
-        },
-        {
-          name: 'Final Inspection',
-          date: '2023-07-25',
-          completed: true,
-        },
-        {
-          name: 'Project Handover',
-          date: '2023-07-31',
-          completed: true,
-        },
-      ],
-      payments: [
-        {
-          amount: '$54,000',
-          date: '2023-05-01',
-          status: 'Paid',
-          description: '30% Upfront',
-        },
-        {
-          amount: '$72,000',
-          date: '2023-06-15',
-          status: 'Paid',
-          description: '40% Mid-project',
-        },
-        {
-          amount: '$54,000',
-          date: '2023-07-31',
-          status: 'Paid',
-          description: '30% Upon Completion',
-        },
-      ],
-      contacts: [
-        {
-          name: 'Thomas Garcia',
-          role: 'Project Manager',
-          email: 'thomas.garcia@buildright.com',
-          phone: '555-222-1111',
-        },
-        {
-          name: 'Lisa Martinez',
-          role: 'Site Supervisor',
-          email: 'lisa.martinez@buildright.com',
-          phone: '555-333-2222',
-        },
-      ],
-    },
-  ]
+    }
+
+    fetchContracts()
+  }, [])
+
+  if (loading) {
+    return <div className="p-8">Loading awarded contracts...</div>
+  }
+
+  if (error) {
+    return <div className="p-8 text-red-500">{error}</div>
+  }
+
   const filteredContracts = contracts.filter((contract) => {
-    // Apply status filter
     if (
       filter !== 'all' &&
       contract.status.toLowerCase() !== filter.toLowerCase()
     ) {
       return false
     }
-    // Apply search filter
+
     if (
       searchTerm &&
       !contract.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -1667,481 +1271,89 @@ export function Contracts() {
     ) {
       return false
     }
+
     return true
   })
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Active':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <CheckCircleIcon size={12} className="mr-1" /> {status}
-          </span>
-        )
-      case 'Completed':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            <CheckCircleIcon size={12} className="mr-1" /> {status}
-          </span>
-        )
-      case 'Pending':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            <ClockIcon size={12} className="mr-1" /> {status}
-          </span>
-        )
-      case 'Terminated':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-            <XCircleIcon size={12} className="mr-1" /> {status}
-          </span>
-        )
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            {status}
-          </span>
-        )
-    }
-  }
-  const getPaymentStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Paid':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <CheckCircleIcon size={12} className="mr-1" /> {status}
-          </span>
-        )
-      case 'Pending':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            <ClockIcon size={12} className="mr-1" /> {status}
-          </span>
-        )
-      case 'Scheduled':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            <CalendarIcon size={12} className="mr-1" /> {status}
-          </span>
-        )
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            {status}
-          </span>
-        )
-    }
-  }
-  const calculateProgress = (contract: {
-    milestones: { completed: boolean }[]
-  }) => {
+
+  const calculateProgress = (contract: Contract) => {
     if (!contract.milestones || contract.milestones.length === 0) return 0
     const completed = contract.milestones.filter((m) => m.completed).length
     return (completed / contract.milestones.length) * 100
   }
+
   return (
-    <div className="container mx-auto px-4 py-6 font-['Poppins']">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Contracts</h1>
-        <button className="bg-black text-white px-4 py-2 rounded-md flex items-center text-sm font-medium hover:bg-gray-800">
-          <FileTextIcon size={16} className="mr-2" />
-          New Contract
-        </button>
-      </div>
-      {/* Filters and search */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between space-y-3 md:space-y-0 md:space-x-4">
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search contracts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-black focus:border-black"
-              />
-            </div>
-            <div className="flex items-center">
-              <FilterIcon size={16} className="text-gray-500 mr-2" />
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="border border-gray-200 rounded-md text-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-black focus:border-black"
-              >
-                <option value="all">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="terminated">Terminated</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button className="px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-600 hover:bg-gray-50 flex items-center">
-              <SortAscIcon size={16} className="mr-2" />
-              Sort
-            </button>
-          </div>
-        </div>
-      </div>
-      {/* Main content grid */}
+    <div className="container mx-auto px-4 py-6">
+      <h1 className="text-2xl font-semibold mb-6">Awarded Contracts</h1>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column - Contract list */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">
-                Contract List
-              </h3>
-            </div>
-            <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
-              {filteredContracts.map((contract) => (
+        {/* Left List */}
+        <div className="bg-white rounded-lg shadow border">
+          {filteredContracts.map((contract) => (
+            <div
+              key={contract.id}
+              className={`p-4 cursor-pointer border-b hover:bg-gray-50 ${
+                selectedContract?.id === contract.id ? 'bg-gray-100' : ''
+              }`}
+              onClick={() => setSelectedContract(contract)}
+            >
+              <div className="flex justify-between">
+                <div>
+                  <p className="font-medium">{contract.title}</p>
+                  <p className="text-sm text-gray-500">
+                    {contract.vendor} • {contract.id}
+                  </p>
+                </div>
+                <p className="font-medium">{contract.value}</p>
+              </div>
+
+              <div className="mt-2 bg-gray-200 h-1 rounded-full">
                 <div
-                  key={contract.id}
-                  className={`p-4 cursor-pointer hover:bg-gray-50 ${selectedContract?.id === contract.id ? 'bg-gray-50' : ''}`}
-                  onClick={() => setSelectedContract(contract)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {contract.title}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {contract.vendor} • {contract.id}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {contract.startDate} to {contract.endDate}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <p className="text-sm font-medium text-gray-900">
-                        {contract.value}
-                      </p>
-                      {getStatusBadge(contract.status)}
-                    </div>
-                  </div>
-                  {contract.milestones && (
-                    <div className="mt-3">
-                      <div className="w-full bg-gray-200 rounded-full h-1.5">
-                        <div
-                          className="bg-blue-600 h-1.5 rounded-full"
-                          style={{
-                            width: `${calculateProgress(contract)}%`,
-                          }}
-                        ></div>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {contract.milestones.filter((m) => m.completed).length}{' '}
-                        of {contract.milestones.length} milestones completed
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ))}
-              {filteredContracts.length === 0 && (
-                <div className="p-8 text-center">
-                  <p className="text-gray-500">
-                    No contracts found matching your criteria
-                  </p>
-                </div>
-              )}
+                  className="bg-blue-600 h-1 rounded-full"
+                  style={{ width: `${calculateProgress(contract)}%` }}
+                ></div>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
-        {/* Right column - Contract details */}
-        <div className="lg:col-span-2">
+
+        {/* Right Details */}
+        <div className="lg:col-span-2 bg-white rounded-lg shadow border p-6">
           {selectedContract ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100">
-              {/* Header */}
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      {selectedContract.title}
-                    </h2>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Contract ID: {selectedContract.id}
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <button className="p-2 text-gray-600 hover:text-gray-900 mr-2">
-                      <EditIcon size={18} />
-                    </button>
-                    <button className="p-2 text-gray-600 hover:text-gray-900 mr-2">
-                      <BellIcon size={18} />
-                    </button>
-                    <button className="p-2 text-gray-600 hover:text-gray-900">
-                      <MoreHorizontalIcon size={18} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-              {/* Tabs */}
-              <div className="border-b border-gray-200">
-                <nav className="flex -mb-px">
-                  <a
-                    href="#"
-                    className="border-b-2 border-black text-gray-900 whitespace-nowrap py-4 px-6 font-medium text-sm"
-                  >
-                    Overview
-                  </a>
-                  <a
-                    href="#"
-                    className="border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-6 font-medium text-sm"
-                  >
-                    Documents
-                  </a>
-                  <a
-                    href="#"
-                    className="border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-6 font-medium text-sm"
-                  >
-                    Milestones
-                  </a>
-                  <a
-                    href="#"
-                    className="border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-6 font-medium text-sm"
-                  >
-                    Payments
-                  </a>
-                </nav>
-              </div>
-              {/* Content */}
-              <div className="p-6">
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Contract Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-gray-50 p-4 rounded-md">
-                      <p className="text-sm text-gray-500">Vendor</p>
-                      <p className="text-sm font-medium text-gray-900 mt-1">
-                        {selectedContract.vendor}
-                      </p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-md">
-                      <p className="text-sm text-gray-500">Department</p>
-                      <p className="text-sm font-medium text-gray-900 mt-1">
-                        {selectedContract.department}
-                      </p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-md">
-                      <p className="text-sm text-gray-500">Type</p>
-                      <p className="text-sm font-medium text-gray-900 mt-1">
-                        {selectedContract.type}
-                      </p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-md">
-                      <p className="text-sm text-gray-500">Start Date</p>
-                      <p className="text-sm font-medium text-gray-900 mt-1">
-                        {selectedContract.startDate}
-                      </p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-md">
-                      <p className="text-sm text-gray-500">End Date</p>
-                      <p className="text-sm font-medium text-gray-900 mt-1">
-                        {selectedContract.endDate}
-                      </p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-md">
-                      <p className="text-sm text-gray-500">Value</p>
-                      <p className="text-sm font-medium text-gray-900 mt-1">
-                        {selectedContract.value}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Description
-                  </h3>
-                  <p className="text-sm text-gray-700 bg-gray-50 p-4 rounded-md">
-                    {selectedContract.description}
-                  </p>
-                </div>
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Documents
-                  </h3>
-                  <div className="bg-gray-50 rounded-md divide-y divide-gray-200">
-                    {selectedContract.documents.map((doc, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-4"
-                      >
-                        <div className="flex items-center">
-                          <div className="bg-white p-2 rounded-md border border-gray-200 mr-3">
-                            <svg
-                              className="h-6 w-6 text-gray-500"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                              />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {doc.name}
-                            </p>
-                            <p className="text-xs text-gray-500">{doc.size}</p>
-                          </div>
-                        </div>
-                        <button className="text-gray-600 hover:text-gray-900">
-                          <DownloadIcon size={18} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="mb-8">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      Milestones
-                    </h3>
-                    <div className="text-sm text-gray-500">
-                      {
-                        selectedContract.milestones.filter((m) => m.completed)
-                          .length
-                      }{' '}
-                      of {selectedContract.milestones.length} completed
-                    </div>
-                  </div>
-                  <div className="relative">
-                    {/* Timeline line */}
-                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-                    {/* Milestone items */}
-                    <div className="space-y-6 relative">
-                      {selectedContract.milestones.map((milestone, index) => (
-                        <div key={index} className="flex items-start">
-                          <div
-                            className={`relative flex items-center justify-center w-8 h-8 rounded-full border-2 ${milestone.completed ? 'border-green-500 bg-green-100' : 'border-gray-300 bg-white'} z-10`}
-                          >
-                            {milestone.completed ? (
-                              <CheckCircleIcon
-                                size={16}
-                                className="text-green-500"
-                              />
-                            ) : (
-                              <span className="h-2 w-2 bg-gray-300 rounded-full"></span>
-                            )}
-                          </div>
-                          <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-900">
-                              {milestone.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {milestone.date}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Payments
-                  </h3>
-                  <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Amount
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Date
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Description
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {selectedContract.payments.map((payment, index) => (
-                          <tr key={index}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {payment.amount}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {payment.date}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {payment.description}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {getPaymentStatusBadge(payment.status)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+            <>
+              <h2 className="text-xl font-semibold mb-2">
+                {selectedContract.title}
+              </h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Contract ID: {selectedContract.id}
+              </p>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <p className="text-sm text-gray-500">Vendor</p>
+                  <p>{selectedContract.vendor}</p>
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Contact Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {selectedContract.contacts.map((contact, index) => (
-                      <div key={index} className="bg-gray-50 p-4 rounded-md">
-                        <p className="text-sm font-medium text-gray-900">
-                          {contact.name}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {contact.role}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          <a
-                            href={`mailto:${contact.email}`}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            {contact.email}
-                          </a>
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          <a
-                            href={`tel:${contact.phone}`}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            {contact.phone}
-                          </a>
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-sm text-gray-500">Department</p>
+                  <p>{selectedContract.department}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Start Date</p>
+                  <p>{selectedContract.startDate}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">End Date</p>
+                  <p>{selectedContract.endDate}</p>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 flex flex-col items-center justify-center h-full">
-              <EyeIcon size={48} className="text-gray-300 mb-4" />
-              <p className="text-gray-500 text-lg">
-                Select a contract to view details
+
+              <p className="text-gray-700 mb-6">
+                {selectedContract.description}
               </p>
-            </div>
+            </>
+          ) : (
+            <p className="text-gray-500">
+              Select a contract to view details
+            </p>
           )}
         </div>
       </div>

@@ -63,7 +63,7 @@ export function ActiveTenders() {
     try {
       setLoading(true);
 
-    const res = await fetch("http://localhost:3000/api/tenders/status/OPEN", {
+    const res = await fetch("http://localhost:3000/api/tenders/active", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -94,7 +94,7 @@ export function ActiveTenders() {
         description: tender.description,
         requirements: tender.requirements || [],
         publishedDate: tender.createdAt.split("T")[0],
-        bidsCount: 0,
+        bidsCount: tender.bidsCount || 0,
       }));
 
       setTenders(formatted);
@@ -674,55 +674,73 @@ export function MyBids() {
 }
 // Contracts Page
 export function Contracts() {
-  const contracts = [
-    {
-      id: 'C001',
-      title: 'IT Infrastructure Upgrade',
-      contractValue: '$920K',
-      startDate: '2024-03-01',
-      endDate: '2024-08-31',
-      status: 'Active',
-      progress: 35,
-      client: 'Department of Technology',
-      paymentStatus: 'Up to date',
-      nextMilestone: 'Phase 2 Completion',
-      milestoneDate: '2024-04-15',
-      description:
-        'This contract covers upgrading the IT infrastructure of the Department of Technology, including server migration, cloud adoption, and cybersecurity enhancements.',
-    },
-    {
-      id: 'C002',
-      title: 'Office Building Maintenance',
-      contractValue: '$1.2M',
-      startDate: '2024-01-15',
-      endDate: '2024-12-31',
-      status: 'Active',
-      progress: 25,
-      client: 'General Services Administration',
-      paymentStatus: 'Pending Review',
-      nextMilestone: 'Quarterly Inspection',
-      milestoneDate: '2024-04-01',
-      description:
-        'This contract involves year-round maintenance of office buildings, including HVAC servicing, cleaning, repairs, and quarterly inspections.',
-    },
-    {
-      id: 'C003',
-      title: 'School Renovation Project',
-      contractValue: '$1.8M',
-      startDate: '2023-09-01',
-      endDate: '2024-02-28',
-      status: 'Completed',
-      progress: 100,
-      client: 'Board of Education',
-      paymentStatus: 'Completed',
-      nextMilestone: 'Final Inspection',
-      milestoneDate: '2024-03-01',
-      description:
-        'A complete renovation of several schools under the Board of Education, including classroom upgrades, safety compliance improvements, and new facilities.',
-    },
-  ]
 
+  // ✅ Replaced static contracts with state
+  const [contracts, setContracts] = useState<any[]>([])
   const [selectedContract, setSelectedContract] = useState<any | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  // ✅ Fetch from backend
+  useEffect(() => {
+    const fetchContracts = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/tenders/my-awarded",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              // 👈 send identity
+            },
+            body: JSON.stringify({
+                user: "Vendor-Jay"
+              })
+          }
+        )
+
+        const result = await response.json()
+
+        if (!result.success) {
+          throw new Error(result.error)
+        }
+
+        // 🔥 Convert awarded tenders → contract format
+        const formatted = result.data.map((tender: any) => {
+
+          const status =
+            tender.status === "Completed"
+              ? "Completed"
+              : "Active"
+
+          return {
+            id: tender.tenderId,
+            title: tender.description,
+            contractValue: `₹${tender.awardedAmount || tender.maxAmount}`,
+            startDate: tender.startDate || tender.createdAt?.split("T")[0],
+            endDate: tender.deadline,
+            status: status,
+            progress: status === "Completed" ? 100 : 50,
+            client: tender.buyer || "Government Department",
+            paymentStatus: status === "Completed" ? "Completed" : "In Progress",
+            nextMilestone: "Ongoing Execution",
+            milestoneDate: tender.deadline,
+            description: tender.description,
+          }
+        })
+
+        setContracts(formatted)
+
+      } catch (err: any) {
+        console.error("Error fetching contracts:", err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchContracts()
+  }, [])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -730,20 +748,14 @@ export function Contracts() {
         return 'bg-green-100 text-green-700'
       case 'Completed':
         return 'bg-blue-100 text-blue-700'
-      case 'Pending':
-        return 'bg-yellow-100 text-yellow-700'
       default:
         return 'bg-gray-100 text-gray-700'
     }
   }
 
   return (
-    <div
-      className="p-6"
-      style={{
-        fontFamily: 'Poppins, sans-serif',
-      }}
-    >
+    <div className="p-6" style={{ fontFamily: 'Poppins, sans-serif' }}>
+
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-black mb-2">Contracts</h1>
         <p className="text-gray-600">
@@ -751,23 +763,38 @@ export function Contracts() {
         </p>
       </div>
 
-      {/* Contract Stats */}
+      {/* ✅ Loading & Error */}
+      {loading && <p>Loading contracts...</p>}
+      {error && <p className="text-red-500">{error}</p>}
+
+      {/* ✅ Dynamic Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="text-2xl font-bold text-black">$3.94M</div>
+          <div className="text-2xl font-bold text-black">
+            ₹{contracts
+              .reduce((sum, c) =>
+                sum + Number(c.contractValue.replace(/[^\d.]/g, "")), 0)
+              .toLocaleString()}
+          </div>
           <div className="text-sm text-gray-600">Total Contract Value</div>
         </div>
+
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="text-2xl font-bold text-green-600">2</div>
+          <div className="text-2xl font-bold text-green-600">
+            {contracts.filter(c => c.status === "Active").length}
+          </div>
           <div className="text-sm text-gray-600">Active Contracts</div>
         </div>
+
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="text-2xl font-bold text-blue-600">1</div>
-          <div className="text-sm text-gray-600">Completed This Year</div>
+          <div className="text-2xl font-bold text-blue-600">
+            {contracts.filter(c => c.status === "Completed").length}
+          </div>
+          <div className="text-sm text-gray-600">Completed</div>
         </div>
       </div>
 
-      {/* Contracts List */}
+      {/* ✅ Contracts List */}
       <div className="space-y-6">
         {contracts.map((contract) => (
           <div
@@ -784,6 +811,7 @@ export function Contracts() {
                   <span>Client: {contract.client}</span>
                 </div>
               </div>
+
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(contract.status)}`}
               >
@@ -798,18 +826,21 @@ export function Contracts() {
                   {contract.contractValue}
                 </div>
               </div>
+
               <div>
                 <div className="text-sm text-gray-500">Duration</div>
                 <div className="font-semibold text-black">
                   {contract.startDate} - {contract.endDate}
                 </div>
               </div>
+
               <div>
                 <div className="text-sm text-gray-500">Payment Status</div>
                 <div className="font-semibold text-black">
                   {contract.paymentStatus}
                 </div>
               </div>
+
               <div>
                 <div className="text-sm text-gray-500">Next Milestone</div>
                 <div className="font-semibold text-black">
@@ -820,105 +851,13 @@ export function Contracts() {
                 </div>
               </div>
             </div>
-
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">Progress</span>
-                <span className="text-sm font-medium text-black">
-                  {contract.progress}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-black h-2 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${contract.progress}%`,
-                  }}
-                ></div>
-              </div>
-            </div>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setSelectedContract(contract)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                <FileText className="h-4 w-4 inline mr-2" />
-                View Contract
-              </button>
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
-                <Download className="h-4 w-4 inline mr-2" />
-                Download Documents
-              </button>
-            </div>
           </div>
         ))}
       </div>
 
-      {/* Contract Details Modal */}
-      {selectedContract && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-    <div className="bg-white p-8 rounded-lg w-full max-w-4xl shadow-lg relative">
-      <button
-        onClick={() => setSelectedContract(null)}
-        className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
-      >
-        ✕
-      </button>
-      <h2 className="text-2xl font-bold mb-4 text-black">
-        {selectedContract.title}
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div>
-          <p className="text-sm text-gray-500">Contract ID</p>
-          <p className="font-medium text-black">{selectedContract.id}</p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-500">Client</p>
-          <p className="font-medium text-black">{selectedContract.client}</p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-500">Contract Value</p>
-          <p className="font-medium text-black">
-            {selectedContract.contractValue}
-          </p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-500">Payment Status</p>
-          <p className="font-medium text-black">
-            {selectedContract.paymentStatus}
-          </p>
-        </div>
-      </div>
-      <div className="mb-6">
-        <p className="text-sm text-gray-500">Duration</p>
-        <p className="font-medium text-black">
-          {selectedContract.startDate} – {selectedContract.endDate}
-        </p>
-      </div>
-      <div className="mb-6">
-        <p className="text-sm text-gray-500">Description</p>
-        <p className="text-gray-700 leading-relaxed">
-          {selectedContract.description ||
-            'No detailed description available for this contract.'}
-        </p>
-      </div>
-      <div className="flex justify-end">
-        <button
-          onClick={() => setSelectedContract(null)}
-          className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
     </div>
   )
 }
-
 // Support Page
 export function Support() {
   const [selectedFaq, setSelectedFaq] = useState<number | null>(null)

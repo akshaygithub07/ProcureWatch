@@ -14,7 +14,7 @@ import {
   TrendingUp,
   Shield,
 } from "lucide-react";
-import { BudgetTracking, BuyerSupport, ProcurementRequests, VendorResponses } from "./BuyerPages";
+import { BudgetTracking, BuyerSupport, ProcurementRequests, VendorResponses, BuyerContracts} from "./BuyerPages";
 import { Contracts, Support } from "./VendorPages";
 
 export interface BuyerDashboardProps {
@@ -94,7 +94,7 @@ export function BuyerDashboard({
       case "responses":
         return <VendorResponses/>;
       case "contracts":
-        return <Contracts/>;
+        return <BuyerContracts/>;
       case "budget":
         return <BudgetTracking/>;
       case "support":
