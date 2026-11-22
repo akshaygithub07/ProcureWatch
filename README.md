@@ -1,4 +1,4 @@
-# Transparent Public Procurement System using Hyperledger Fabric
+# Transparent Public Procurement System using Hyperledger Fabric - ProcureWatch
 
 ## Table of Contents
 - [Project Overview](#project-overview)  
